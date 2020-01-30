@@ -8,22 +8,12 @@ public class Terra
     private volatile Octree octree;
     private volatile Node parent;
     private volatile Dictionary<string, MeshInstance> meshes;
+    public static volatile int traversals = 0;
 
     public Terra(int sizeX, int sizeY, int sizeZ, Node parent)
     {
         this.parent = parent;
-        octree = new Octree();
-        octree.sizeX = sizeX;
-        octree.sizeY = sizeY;
-        octree.sizeZ = sizeZ;
-
-        int size = octree.sizeX * octree.sizeY * octree.sizeZ;
-        octree.layers = (int) Utils.CalculateLayers((uint) size);
-
-        OctreeNode octreeNode = new OctreeNode();
-        octreeNode.children = new OctreeNode[8];
-
-        octree.mainNode = octreeNode;
+        octree = new Octree(sizeX, sizeY, sizeZ);
 
         meshes = new Dictionary<string, MeshInstance>();
     }
@@ -33,8 +23,21 @@ public class Terra
         return octree;
     }
 
+    public OctreeNode TraverseOctree(float posX, float posY, float posZ, int layer)
+    {
+        OctreeNode currentNode = octree.mainNode;
+        while (currentNode.layer > layer)
+        {
+            currentNode = currentNode.SelectChild(posX, posY, posZ);
+            if (!currentNode.Initialized)
+                currentNode.Initialize();
+        }
+        return currentNode;
+    }
+
     public OctreeNode TraverseOctree(int posX, int posY, int posZ, int layer)
     {
+        traversals++;
         if (posX >= 0 && posY >= 0 && posZ >= 0 && layer < octree.layers)
         {
             int currentLayer = octree.layers;
@@ -47,13 +50,9 @@ public class Terra
 
                 currentLayer -= 1;
                 int nodePos = SelectChildOctant(nodePosX, nodePosY, nodePosZ);
-                OctreeNode childNode = currentNode.children[nodePos];
-                if (childNode == null)
-                {
-                    childNode = new OctreeNode();
-                    childNode.children = new OctreeNode[8];
-                    currentNode.children[nodePos] = childNode;
-                }
+                OctreeNode childNode = currentNode.children[nodePos & 1, (nodePos & 2) >> 1, (nodePos & 4) >> 2];
+                if (!childNode.Initialized)
+                    childNode.Initialize();
 
                 currentNode = childNode;
 
@@ -74,16 +73,15 @@ public class Terra
                     meshes.Add(name, instance);
                 }*/
             }
+            if (!currentNode.Initialized)
+                currentNode.Initialize();
 
             if (currentLayer == 0)
             {
+
                 int pos = SelectChildOctant(posX, posY, posZ);
-                OctreeNode childNode = currentNode.children[pos];
-                if (childNode == null)
-                {
-                    childNode = new OctreeNode();
-                    currentNode.children[pos] = childNode;
-                }
+                OctreeNode childNode = currentNode.children[pos & 1, (pos & 2) >> 1, (pos & 4) >> 2];
+                
 
                 return childNode;
             }
@@ -98,6 +96,7 @@ public class Terra
     {
         OctreeNode node = TraverseOctree(posX, posY, posZ, 0);
         node.chunk = chunk;
+        node.materialID = (int)(chunk.voxels[0]);
     }
 
     public void ReplaceChunk(int posX, int posY, int posZ, Chunk chunk)
@@ -110,6 +109,7 @@ public class Terra
 
     private int SelectChildOctant(int posX, int posY, int posZ)
     {
+        /*
         if (posX % 2 == 0 && posY % 2 == 0 && posZ % 2 == 0)
         {
             return 0;
@@ -142,6 +142,9 @@ public class Terra
         {
             return 7;
         }
+        */
+        //return 4 * (posY % 2) + 2 * (posZ % 2) + (posX % 2);
+        return 4 * (1 & posZ) + 2 * (1 & posY) + (1 & posX);
     }
 
     private static MeshInstance DebugMesh()
