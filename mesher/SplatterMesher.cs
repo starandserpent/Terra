@@ -112,7 +112,7 @@ public class SplatterMesher
         }
 
         surfacetool.Index();
-        instance.SetMesh(surfacetool.Commit());
+        instance.Mesh = surfacetool.Commit();
         surfacetool.Clear();
         instance.MaterialOverride = chunkMaterial.Duplicate() as ShaderMaterial;
 

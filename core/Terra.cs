@@ -193,7 +193,7 @@ public class Terra
         tool.AddVertex(new Vector3(0, 1, 0));
 
         MeshInstance instance = new MeshInstance();
-        instance.SetMesh(tool.Commit());
+        instance.Mesh = tool.Commit();
         return instance;
     }
 }
