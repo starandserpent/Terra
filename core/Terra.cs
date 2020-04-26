@@ -109,42 +109,7 @@ public class Terra
 
     private int SelectChildOctant(int posX, int posY, int posZ)
     {
-        /*
-        if (posX % 2 == 0 && posY % 2 == 0 && posZ % 2 == 0)
-        {
-            return 0;
-        }
-        else if (posX % 2 == 1 && posY % 2 == 0 && posZ % 2 == 0)
-        {
-            return 1;
-        }
-        else if (posX % 2 == 0 && posY % 2 == 0 && posZ % 2 == 1)
-        {
-            return 2;
-        }
-        else if (posX % 2 == 1 && posY % 2 == 0 && posZ % 2 == 1)
-        {
-            return 3;
-        }
-        else if (posX % 2 == 0 && posY % 2 == 1 && posZ % 2 == 0)
-        {
-            return 4;
-        }
-        else if (posX % 2 == 1 && posY % 2 == 1 && posZ % 2 == 0)
-        {
-            return 5;
-        }
-        else if (posX % 2 == 0 && posY % 2 == 1 && posZ % 2 == 1)
-        {
-            return 6;
-        }
-        else
-        {
-            return 7;
-        }
-        */
-        //return 4 * (posY % 2) + 2 * (posZ % 2) + (posX % 2);
-        return 4 * (1 & posZ) + 2 * (1 & posY) + (1 & posX);
+        return  (posY % 2) * 4 | (posZ % 2) * 2 | (posX % 2);
     }
 
     private static MeshInstance DebugMesh()
