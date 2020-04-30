@@ -6,12 +6,12 @@ public class TerraObject
     public int worldID { get; set; }
     public string fullName { get; set; }
     public string name { get; }
-    public Texture texture { get; }
+    public SpatialMaterial material { get; }
     public TerraMesh mesh { get; set; }
 
-    public TerraObject(string name, Texture texture)
+    public TerraObject(string name, SpatialMaterial material)
     {
         this.name = name;
-        this.texture = texture;
+        this.material = material;
     }
 }
