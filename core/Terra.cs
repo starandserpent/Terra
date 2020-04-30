@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System;
 using Godot;
 
 public class Terra
@@ -8,7 +7,6 @@ public class Terra
     private volatile Octree octree;
     private volatile Node parent;
     private volatile Dictionary<string, MeshInstance> meshes;
-    public static volatile int traversals = 0;
 
     public Terra(int sizeX, int sizeY, int sizeZ, Node parent)
     {
@@ -23,21 +21,8 @@ public class Terra
         return octree;
     }
 
-    public OctreeNode TraverseOctree(float posX, float posY, float posZ, int layer)
-    {
-        OctreeNode currentNode = octree.mainNode;
-        while (currentNode.layer > layer)
-        {
-            currentNode = currentNode.SelectChild(posX, posY, posZ);
-            if (!currentNode.Initialized)
-                currentNode.Initialize();
-        }
-        return currentNode;
-    }
-
     public OctreeNode TraverseOctree(int posX, int posY, int posZ, int layer)
     {
-        traversals++;
         if (posX >= 0 && posY >= 0 && posZ >= 0 && layer < octree.layers)
         {
             int currentLayer = octree.layers;
