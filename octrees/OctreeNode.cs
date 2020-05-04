@@ -4,7 +4,7 @@ public class OctreeNode
 {
     const int DIM_LEN = 2;
     public Vector3 center { get; private set; }
-    public Vector3 size { get; private set; }
+    public int size { get; private set; }
     public bool Initialized { get; private set; }
     public OctreeNode[,,] children { get; private set; }
     public Chunk chunk { get; set; }
@@ -12,7 +12,7 @@ public class OctreeNode
     public static int numNodesInit = 0;
     public int layer {get; private set;}
 
-    public OctreeNode(Vector3 size, Vector3 center, int layer)
+    public OctreeNode(int size,int layer)
     {
         this.size = size;
         this.center = center;
@@ -28,18 +28,12 @@ public class OctreeNode
             for (int j=0; j < DIM_LEN; j++)
                 for (int k=0; k < DIM_LEN; k++)
                 {
-                    children[i,j,k] = new OctreeNode(size/2, CenterCalc(i, j, k), layer - 1);
+                    children[i,j,k] = new OctreeNode(size/2, layer - 1);
                 }
         Initialized = true;
         numNodesInit++;
     }
-
-    Vector3 CenterCalc(int x, int y, int z)
-    {
-        Vector3 centerOffset = new Vector3(x-0.5f, y-0.5f, z-0.5f);
-        return center + centerOffset;
-    }
-
+    
     public OctreeNode SelectChild(float x, float y, float z)
     {
         return children[Convert.ToInt32(x > center.X), Convert.ToInt32(y > center.Y), Convert.ToInt32(z > center.Z)];

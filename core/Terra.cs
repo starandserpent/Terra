@@ -1,3 +1,4 @@
+using System;
 using Threading = System.Threading;
 using System.Collections.Generic;
 using Godot;
@@ -8,9 +9,14 @@ public class Terra {
     private volatile Node parent;
     private volatile Dictionary<string, MeshInstance> meshes;
 
-    public Terra (int sizeX, int sizeY, int sizeZ, Node parent) {
+    public Position boundries{get; private set;}
+
+    public Terra (Position boundries, Node parent) {
         this.parent = parent;
-        octree = new Octree (sizeX, sizeY, sizeZ);
+
+        this.boundries = boundries;
+
+        octree = new Octree (boundries.GetMax());
 
         meshes = new Dictionary<string, MeshInstance> ();
     }
@@ -20,8 +26,7 @@ public class Terra {
     }
 
     public OctreeNode TraverseOctree (int posX, int posY, int posZ, int layer) {
-        if (posX >= 0 && posY >= 0 && posZ >= 0 && layer < octree.layers &&
-            posX * 8 <= octree.sizeX && posY * 8 <= octree.sizeY && posZ * 8 <= octree.sizeZ) {
+        if (CheckBoundries(posX, posY, posZ) && layer < octree.layers) {
             lock (this) {
                 int currentLayer = octree.layers;
                 OctreeNode currentNode = octree.mainNode;
@@ -72,6 +77,11 @@ public class Terra {
         return null;
     }
 
+    public bool CheckBoundries(int posX, int posY, int posZ){
+        return posX >= 0 && posY >= 0 && posZ >= 0 &&
+            posX <= boundries.x * 8 && posY <= boundries.y * 8 && posZ <= boundries.z * 8;
+    }
+
     public void PlaceChunk (int posX, int posY, int posZ, Chunk chunk) {
         OctreeNode node = TraverseOctree (posX, posY, posZ, 0);
         node.chunk = chunk;
@@ -86,7 +96,7 @@ public class Terra {
     }
 
     private int SelectChildOctant (int posX, int posY, int posZ) {
-        return (posY % 2) * 4 | (posZ % 2) * 2 | (posX % 2);
+        return (posX % 2) * 4 | (posY % 2) * 2 | (posZ % 2);
     }
 
     private static MeshInstance DebugMesh () {
