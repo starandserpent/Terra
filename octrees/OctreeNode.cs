@@ -8,7 +8,6 @@ public class OctreeNode
     public bool Initialized { get; private set; }
     public OctreeNode[,,] children { get; private set; }
     public Chunk chunk { get; set; }
-    public int materialID { get; set; } = -1;
     public static int numNodes = 0;
     public static int numNodesInit = 0;
     public int layer {get; private set;}

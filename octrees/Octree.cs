@@ -15,7 +15,7 @@ public class Octree
         size.Y = sizeY;
         size.Z = sizeZ;
         // Calculate number of layers needed to represent the level
-        layers =  (int)Math.Log(sizeX * sizeY * sizeZ, 2);
+        layers = (int)Math.Log(sizeX * sizeY * sizeZ, 2);
 
         // Generate all the OctreeNodes
         mainNode = new OctreeNode(size, size/2, layers);

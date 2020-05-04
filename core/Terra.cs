@@ -75,7 +75,7 @@ public class Terra {
     public void PlaceChunk (int posX, int posY, int posZ, Chunk chunk) {
         OctreeNode node = TraverseOctree (posX, posY, posZ, 0);
         node.chunk = chunk;
-        node.materialID = (int) (chunk.voxels[0].value);
+     //   node.materialID = (int) (chunk.voxels[0].value);
     }
 
     public void ReplaceChunk (int posX, int posY, int posZ, Chunk chunk) {
