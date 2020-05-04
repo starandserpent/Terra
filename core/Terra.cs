@@ -20,7 +20,8 @@ public class Terra {
     }
 
     public OctreeNode TraverseOctree (int posX, int posY, int posZ, int layer) {
-        if (posX >= 0 && posY >= 0 && posZ >= 0 && layer < octree.layers) {
+        if (posX >= 0 && posY >= 0 && posZ >= 0 && layer < octree.layers &&
+            posX * 8 <= octree.sizeX && posY * 8 <= octree.sizeY && posZ * 8 <= octree.sizeZ) {
             lock (this) {
                 int currentLayer = octree.layers;
                 OctreeNode currentNode = octree.mainNode;
@@ -74,7 +75,7 @@ public class Terra {
     public void PlaceChunk (int posX, int posY, int posZ, Chunk chunk) {
         OctreeNode node = TraverseOctree (posX, posY, posZ, 0);
         node.chunk = chunk;
-        node.materialID = (int) (chunk.voxels[0]);
+        node.materialID = (int) (chunk.voxels[0].value);
     }
 
     public void ReplaceChunk (int posX, int posY, int posZ, Chunk chunk) {
