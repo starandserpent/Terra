@@ -3,7 +3,7 @@ using System.Linq;
 public class Mesher {
     public static MeshedValues NaiveGreedyMeshing (Chunk chunk) {
         MeshedValues values = new MeshedValues ();
-        int[][][, , , ] vertices = new int[chunk.materials - 1][][, , , ];
+        Position[][][, ][] vertices = new Position[chunk.materials - 1][][, ][];
         int count = 0;
         int prev = 0;
         int[] indice = new int[chunk.materials - 1];
@@ -28,9 +28,9 @@ public class Mesher {
             }
 
             if (vertices[objectID - 1] == null) {
-                vertices[objectID - 1] = new int[6][, , , ];
+                vertices[objectID - 1] = new Position[6][, ][];
                 for (int s = 0; s < 6; s++) {
-                    vertices[objectID - 1][s] = new int[Constants.CHUNK_SIZE1D, Constants.CHUNK_SIZE1D, 4, 3];
+                    vertices[objectID - 1][s] = new Position[Constants.CHUNK_SIZE1D, Constants.CHUNK_SIZE1D][];
                 }
             }
 
@@ -49,43 +49,38 @@ public class Mesher {
             int az = z + 1;
 
             //Front
-            int[, , , ] vectors = vertices[objectID - 1][0];
+            Position[, ][] vectors = vertices[objectID - 1][0];
+            vectors[x, z] = new Position[4];
 
             //1
-            vectors[x, z, 0, 0] = x;
-            vectors[x, z, 0, 1] = y;
-            vectors[x, z, 0, 2] = z;
+            vectors[x, z][0].x = x;
+            vectors[x, z][0].y = y;
+            vectors[x, z][0].z = z;
 
             //2
-            vectors[x, z, 1, 0] = ax;
-            vectors[x, z, 1, 1] = y;
-            vectors[x, z, 1, 2] = z;
+            vectors[x, z][1].x = ax;
+            vectors[x, z][1].y = y;
+            vectors[x, z][1].z = z;
 
             //3
-            vectors[x, z, 2, 0] = ax;
-            vectors[x, z, 2, 1] = ay;
-            vectors[x, z, 2, 2] = z;
+            vectors[x, z][2].x = ax;
+            vectors[x, z][2].y = ay;
+            vectors[x, z][2].z = z;
 
             //4
-            vectors[x, z, 3, 0] = x;
-            vectors[x, z, 3, 1] = ay;
-            vectors[x, z, 3, 2] = z;
+            vectors[x, z][3].x = x;
+            vectors[x, z][3].y = ay;
+            vectors[x, z][3].z = z;
 
-            int pos = 1;
-            if (z > 0 && vectors[x, z - 1, 2, 1] > 0) {
-
-                if (vectors[x, z - pos, 0, 0] < 0) {
-                    pos = (int) - vectors[x, z - pos, 0, 0];
-                }
-
-                if (vectors[x, z - pos, 2, 1] >= ay) {
+            if (z > 0 && vectors[x, z - 1] != null) {
+                Position[] sideposition = vertices[objectID - 1][2][x, z - 1];
+                if (vectors[x, z - 1][2].y >= ay) {
                     for (int s = 0; s < 4; s++) {
-                        vectors[x, z, s, 0] = -pos;
+                        vectors[x, z][s].delete = true;
                     }
-                    indice[objectID - 1] -= 4;
-                } else if (vectors[x, z - pos, 2, 1] < ay && vectors[x, z - pos, 0, 1] >= y) {
-                    vectors[x, z, 0, 1] = vectors[x, z - pos, 2, 1];
-                    vectors[x, z, 1, 1] = vectors[x, z - pos, 2, 1];
+                } else if (vectors[x, z - 1][2].y < ay && vectors[x, z - 1][0].y >= y) {
+                    vectors[x, z][0].y = vectors[x, z - 1][2].y;
+                    vectors[x, z][1].y = vectors[x, z - 1][2].y;
                 }
             }
 
@@ -93,36 +88,34 @@ public class Mesher {
 
             //Back
             vectors = vertices[objectID - 1][1];
+            vectors[x, z] = new Position[4];
 
             //1
-            vectors[x, z, 0, 0] = ax;
-            vectors[x, z, 0, 1] = y;
-            vectors[x, z, 0, 2] = az;
+            vectors[x, z][0].x = ax;
+            vectors[x, z][0].y = y;
+            vectors[x, z][0].z = az;
 
             //2
-            vectors[x, z, 1, 0] = x;
-            vectors[x, z, 1, 1] = y;
-            vectors[x, z, 1, 2] = az;
+            vectors[x, z][1].x = x;
+            vectors[x, z][1].y = y;
+            vectors[x, z][1].z = az;
 
             //3
-            vectors[x, z, 2, 0] = x;
-            vectors[x, z, 2, 1] = ay;
-            vectors[x, z, 2, 2] = az;
+            vectors[x, z][2].x = x;
+            vectors[x, z][2].y = ay;
+            vectors[x, z][2].z = az;
 
             //5
-            vectors[x, z, 3, 0] = ax;
-            vectors[x, z, 3, 1] = ay;
-            vectors[x, z, 3, 2] = az;
+            vectors[x, z][3].x = ax;
+            vectors[x, z][3].y = ay;
+            vectors[x, z][3].z = az;
 
-            if (z > 0 && vectors[x, z - 1, 2, 1] > 0) {
-                if (vectors[x, z - 1, 2, 1] > ay && vectors[x, z - 1, 0, 1] <= y) {
-                    vectors[x, z - 1, 0, 1] = ay;
-                    vectors[x, z - 1, 1, 1] = ay;
-                } else if (vectors[x, z - 1, 2, 1] <= ay) {
-                    for (int s = 0; s < 4; s++) {
-                        vectors[x, z - 1, s, 0] = -147457;
-                    }
-
+            if (z > 0 && vectors[x, z - 1] != null) {
+                if (vectors[x, z - 1][2].y > ay && vectors[x, z - 1][0].y <= y) {
+                    vectors[x, z - 1][0].y = ay;
+                    vectors[x, z - 1][1].y = ay;
+                } else if (vectors[x, z - 1][2].y <= ay) {
+                    vectors[x, z - 1] = null;
                     indice[objectID - 1] -= 4;
                 }
             }
@@ -131,36 +124,34 @@ public class Mesher {
 
             //Right
             vectors = vertices[objectID - 1][2];
+            vectors[x, z] = new Position[4];
 
             //1
-            vectors[x, z, 0, 0] = ax;
-            vectors[x, z, 0, 1] = y;
-            vectors[x, z, 0, 2] = z;
+            vectors[x, z][0].x = ax;
+            vectors[x, z][0].y = y;
+            vectors[x, z][0].z = z;
 
             //2
-            vectors[x, z, 1, 0] = ax;
-            vectors[x, z, 1, 1] = y;
-            vectors[x, z, 1, 2] = az;
+            vectors[x, z][1].x = ax;
+            vectors[x, z][1].y = y;
+            vectors[x, z][1].z = az;
 
             //3
-            vectors[x, z, 2, 0] = ax;
-            vectors[x, z, 2, 1] = ay;
-            vectors[x, z, 2, 2] = az;
+            vectors[x, z][2].x = ax;
+            vectors[x, z][2].y = ay;
+            vectors[x, z][2].z = az;
 
             //4
-            vectors[x, z, 3, 0] = ax;
-            vectors[x, z, 3, 1] = ay;
-            vectors[x, z, 3, 2] = z;
+            vectors[x, z][3].x = ax;
+            vectors[x, z][3].y = ay;
+            vectors[x, z][3].z = z;
 
-            if (x > 0 && vectors[x - 1, z, 2, 1] > 0) {
-                if (vectors[x - 1, z, 2, 1] > ay && vectors[x - 1, z, 0, 1] <= y) {
-                    vectors[x - 1, z, 0, 1] = ay;
-                    vectors[x - 1, z, 1, 1] = ay;
-                } else if (vectors[x - 1, z, 2, 1] <= ay) {
-                    for (int s = 0; s < 4; s++) {
-                        vectors[x - 1, z, s, 0] = -147457;
-                    }
-
+            if (x > 0 && vectors[x - 1, z] != null) {
+                if (vectors[x - 1, z][2].y > ay && vectors[x - 1, z][0].y <= y) {
+                    vectors[x - 1, z][0].y = ay;
+                    vectors[x - 1, z][1].y = ay;
+                } else if (vectors[x - 1, z][2].y <= ay) {
+                    vectors[x - 1, z] = null;
                     indice[objectID - 1] -= 4;
                 }
             }
@@ -169,42 +160,36 @@ public class Mesher {
 
             //Left
             vectors = vertices[objectID - 1][3];
+            vectors[x, z] = new Position[4];
 
             //1
-            vectors[x, z, 0, 0] = x;
-            vectors[x, z, 0, 1] = y;
-            vectors[x, z, 0, 2] = az;
+            vectors[x, z][0].x = x;
+            vectors[x, z][0].y = y;
+            vectors[x, z][0].z = az;
 
             //2
-            vectors[x, z, 1, 0] = x;
-            vectors[x, z, 1, 1] = y;
-            vectors[x, z, 1, 2] = z;
+            vectors[x, z][1].x = x;
+            vectors[x, z][1].y = y;
+            vectors[x, z][1].z = z;
 
             //3
-            vectors[x, z, 2, 0] = x;
-            vectors[x, z, 2, 1] = ay;
-            vectors[x, z, 2, 2] = z;
+            vectors[x, z][2].x = x;
+            vectors[x, z][2].y = ay;
+            vectors[x, z][2].z = z;
 
             //4
-            vectors[x, z, 3, 0] = x;
-            vectors[x, z, 3, 1] = ay;
-            vectors[x, z, 3, 2] = az;
+            vectors[x, z][3].x = x;
+            vectors[x, z][3].y = ay;
+            vectors[x, z][3].z = az;
 
-            pos = 1;
-            if (x > 0 && vectors[x - 1, z, 2, 1] > 0) {
-                if (vectors[x - pos, z, 0, 0] < 0) {
-                    pos = (int) - vectors[x - pos, z, 0, 0];
-                }
-
-                if (vectors[x - pos, z, 2, 1] >= ay) {
-                    for (int s = 0; s < 4; s++) {
-                        vectors[x, z, s, 0] = -pos;
+            if (x > 0 && vectors[x - 1, z] != null) {
+                if (vectors[x - 1, z][2].y >= ay) {
+                     for (int s = 0; s < 4; s++) {
+                        vectors[x, z][s].delete = true;
                     }
-
-                    indice[objectID - 1] -= 4;
-                } else if (vectors[x - pos, z, 2, 1] < ay && vectors[x - pos, z, 0, 1] >= y) {
-                    vectors[x, z, 0, 1] = vectors[x - pos, z, 2, 1];
-                    vectors[x, z, 1, 1] = vectors[x - pos, z, 2, 1];
+                } else if (vectors[x - 1, z][2].y < ay && vectors[x - 1, z][0].y >= y) {
+                    vectors[x, z][0].y = vectors[x - 1, z][2].y;
+                    vectors[x, z][1].y = vectors[x - 1, z][2].y;
                 }
             }
 
@@ -212,94 +197,85 @@ public class Mesher {
 
             //Top
             vectors = vertices[objectID - 1][4];
+            vectors[x, z] = new Position[4];
 
             //Naive Greedy Meshing
             int sx = x;
             int sz = z;
-            if (x > 0 && vectors[x - 1, z, 0, 1] == ay && vectors[x - 1, z, 1, 0] > 0) {
-                sx = vectors[x - 1, z, 0, 0];
-                for (int s = 0; s < 4; s++) {
-                    vectors[x - 1, z, s, 0] = -147457;
-                }
 
+            if (x > 0 && vectors[x - 1, z] != null && vectors[x - 1, z][0].y == ay) {
+                sx = vectors[x - 1, z][0].x;
+                vectors[x - 1, z] = null;
                 indice[objectID - 1] -= 4;
             }
 
-            if (z > 0 && vectors[x, z - 1, 0, 1] == ay && vectors[x, z - 1, 1, 0] > 0 && vectors[x, z - 1, 0, 0] == sx && vectors[x, z - 1, 1, 0] == ax) {
-                sz = vectors[x, z - 1, 0, 2];
-                for (int s = 0; s < 4; s++) {
-                    vectors[x, z - 1, s, 0] = -147457;
-                }
-
-                indice[objectID - 1] -= 4;
-            }
+            /* if (z > 0 && vectors[x, z - 1] != null && vectors[x, z - 1][0].y == ay && vectors[x, z - 1][0].x == sx && vectors[x, z - 1][1].x == ax) {
+                 sz = vectors[x, z - 1][0].z;
+                 vectors[x, z - 1] = null;
+                 indice[objectID - 1] -= 4;
+             }*/
 
             //1
-            vectors[x, z, 0, 0] = sx;
-            vectors[x, z, 0, 1] = ay;
-            vectors[x, z, 0, 2] = sz;
+            vectors[x, z][0].x = sx;
+            vectors[x, z][0].y = ay;
+            vectors[x, z][0].z = sz;
 
             //2
-            vectors[x, z, 1, 0] = ax;
-            vectors[x, z, 1, 1] = ay;
-            vectors[x, z, 1, 2] = sz;
+            vectors[x, z][1].x = ax;
+            vectors[x, z][1].y = ay;
+            vectors[x, z][1].z = sz;
 
             //3
-            vectors[x, z, 2, 0] = ax;
-            vectors[x, z, 2, 1] = ay;
-            vectors[x, z, 2, 2] = az;
+            vectors[x, z][2].x = ax;
+            vectors[x, z][2].y = ay;
+            vectors[x, z][2].z = az;
 
             //4
-            vectors[x, z, 3, 0] = sx;
-            vectors[x, z, 3, 1] = ay;
-            vectors[x, z, 3, 2] = az;
+            vectors[x, z][3].x = sx;
+            vectors[x, z][3].y = ay;
+            vectors[x, z][3].z = az;
 
             indice[objectID - 1] += 4;
 
             //Bottom
             vectors = vertices[objectID - 1][5];
+            vectors[x, z] = new Position[4];
 
             //Naive Greedy Meshing
             sx = x;
             sz = z;
-            if (x > 0 && vectors[x - 1, z, 0, 1] == y && vectors[x - 1, z, 0, 0] > 0) {
-                sx = vectors[x - 1, z, 1, 0];
-                for (int s = 0; s < 4; s++) {
-                    vectors[x - 1, z, s, 0] = -147457;
-                }
-
+            if (x > 0 && vectors[x - 1, z] != null && vectors[x - 1, z][0].y == y) {
+                sx = vectors[x - 1, z][1].x;
+                vectors[x - 1, z] = null;
                 indice[objectID - 1] -= 4;
             }
 
             //Greedy Meshing
-            if (z > 0 && vectors[x, z - 1, 0, 1] == y && vectors[x, z - 1, 0, 0] > 0 && vectors[x, z - 1, 0, 0] == ax && vectors[x, z - 1, 2, 0] == sx) {
-                sz = vectors[x, z - 1, 0, 2];
-                for (int s = 0; s < 4; s++) {
-                    vectors[x, z - 1, s, 0] = -147457;
-                }
-
-                indice[objectID - 1] -= 4;
-            }
+            /*    if (z > 0 && vectors[x, z - 1] != null && vectors[x, z - 1][0].y == y && vectors[x, z - 1][0].x == ax && vectors[x, z - 1][2].x == sx) {
+                    sz = vectors[x, z - 1][0].z;
+                    vectors[x, z - 1] = null;
+                    indice[objectID - 1] -= 4;
+                }*/
 
             //1
-            vectors[x, z, 0, 0] = ax;
-            vectors[x, z, 0, 1] = y;
-            vectors[x, z, 0, 2] = z;
+            vectors[x, z][0].x = ax;
+            vectors[x, z][0].y = y;
+            vectors[x, z][0].z = sz;
 
             //2
-            vectors[x, z, 1, 0] = sx;
-            vectors[x, z, 1, 1] = y;
-            vectors[x, z, 1, 2] = z;
+            vectors[x, z][1].x = sx;
+            vectors[x, z][1].y = y;
+            vectors[x, z][1].z = sz;
 
             //3
-            vectors[x, z, 2, 0] = sx;
-            vectors[x, z, 2, 1] = y;
-            vectors[x, z, 2, 2] = az;
+            vectors[x, z][2].x = sx;
+            vectors[x, z][2].y = y;
+            vectors[x, z][2].z = az;
 
             //4
-            vectors[x, z, 3, 0] = ax;
-            vectors[x, z, 3, 1] = y;
-            vectors[x, z, 3, 2] = az;
+            vectors[x, z][3].x = ax;
+            vectors[x, z][3].y = y;
+            vectors[x, z][3].z = az;
 
             indice[objectID - 1] += 4;
 
@@ -312,41 +288,41 @@ public class Mesher {
     }
 
     public static Stack<int> GreedyMeshing (MeshedValues values, int maxSize, int objectID) {
-        Stack<int> vertices = new Stack<int> ();
-        int pos = 0;
-        for (int side = 0; side < 6; side++) {
-            int[, , , ] primitives = values.vertices[objectID][side];
-            for (int x = 0; x < Constants.CHUNK_SIZE1D; x++) {
-                for (int z = 0; z < Constants.CHUNK_SIZE1D; z++) {
-                    if (primitives[x, z, 2, 1] > 0 && primitives[x, z, 0, 0] >= 0 || primitives[x, z, 0, 0] > 0) {
-                        if (pos < maxSize) {
-                            switch (side) {
-                                case 0:
-                                    if (x > 0 && primitives[x - 1, z, 2, 1] > 0 && primitives[x - 1, z, 0, 0] > 0 && primitives[x, z - 1, 0, 0] == primitives[x, z, 2, 1] && primitives[x, z - 1, 2, 0] == primitives[x, z, 0, 1] ) {
-                                        primitives[x, z, 0, 0] = primitives[x - 1, z, 0, 0];
-                                        primitives[x, z, 3, 0] = primitives[x - 1, z, 3, 0];
+        /* Stack<int> vertices = new Stack<int> ();
+         int pos = 0;
+         for (int side = 0; side < 6; side++) {
+             int[, , , ] primitives = values.vertices[objectID][side];
+             for (int x = 0; x < Constants.CHUNK_SIZE1D; x++) {
+                 for (int z = 0; z < Constants.CHUNK_SIZE1D; z++) {
+                     if (primitives[x, z, 2, 1] > 0 && primitives[x, z, 0, 0] >= 0 || primitives[x, z, 0, 0] > 0) {
+                         if (pos < maxSize) {
+                             switch (side) {
+                                 case 0:
+                                     if (x > 0 && primitives[x - 1, z, 2, 1] > 0 && primitives[x - 1, z, 0, 0] > 0 && primitives[x, z - 1, 0, 0] == primitives[x, z, 2, 1] && primitives[x, z - 1, 2, 0] == primitives[x, z, 0, 1]) {
+                                         primitives[x, z, 0, 0] = primitives[x - 1, z, 0, 0];
+                                         primitives[x, z, 3, 0] = primitives[x - 1, z, 3, 0];
 
-                                        for (int s = 0; s < 4; s++) {
-                                            primitives[x - 1, z, s, 0] = -147457;
-                                        }
-                                    }
-                                    break;
-                                case 1:
-                                    break;
-                                case 2:
-                                    break;
-                                case 3:
-                                    break;
-                                case 4:
-                                    break;
-                                case 5:
-                                    break;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        return vertices;
+                                         for (int s = 0; s < 4; s++) {
+                                             primitives[x - 1, z, s, 0] = -147457;
+                                         }
+                                     }
+                                     break;
+                                 case 1:
+                                     break;
+                                 case 2:
+                                     break;
+                                 case 3:
+                                     break;
+                                 case 4:
+                                     break;
+                                 case 5:
+                                     break;
+                             }
+                         }
+                     }
+                 }
+             }
+         }*/
+        return null;
     }
 }
