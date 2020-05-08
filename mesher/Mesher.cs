@@ -184,7 +184,7 @@ public class Mesher {
 
             if (x > 0 && vectors[x - 1, z] != null) {
                 if (vectors[x - 1, z][2].y >= ay) {
-                     for (int s = 0; s < 4; s++) {
+                    for (int s = 0; s < 4; s++) {
                         vectors[x, z][s].delete = true;
                     }
                 } else if (vectors[x - 1, z][2].y < ay && vectors[x - 1, z][0].y >= y) {
@@ -201,7 +201,6 @@ public class Mesher {
 
             //Naive Greedy Meshing
             int sx = x;
-            int sz = z;
 
             if (x > 0 && vectors[x - 1, z] != null && vectors[x - 1, z][0].y == ay) {
                 sx = vectors[x - 1, z][0].x;
@@ -209,21 +208,15 @@ public class Mesher {
                 indice[objectID - 1] -= 4;
             }
 
-            /* if (z > 0 && vectors[x, z - 1] != null && vectors[x, z - 1][0].y == ay && vectors[x, z - 1][0].x == sx && vectors[x, z - 1][1].x == ax) {
-                 sz = vectors[x, z - 1][0].z;
-                 vectors[x, z - 1] = null;
-                 indice[objectID - 1] -= 4;
-             }*/
-
             //1
             vectors[x, z][0].x = sx;
             vectors[x, z][0].y = ay;
-            vectors[x, z][0].z = sz;
+            vectors[x, z][0].z = z;
 
             //2
             vectors[x, z][1].x = ax;
             vectors[x, z][1].y = ay;
-            vectors[x, z][1].z = sz;
+            vectors[x, z][1].z = z;
 
             //3
             vectors[x, z][2].x = ax;
@@ -243,29 +236,21 @@ public class Mesher {
 
             //Naive Greedy Meshing
             sx = x;
-            sz = z;
             if (x > 0 && vectors[x - 1, z] != null && vectors[x - 1, z][0].y == y) {
                 sx = vectors[x - 1, z][1].x;
                 vectors[x - 1, z] = null;
                 indice[objectID - 1] -= 4;
             }
 
-            //Greedy Meshing
-            /*    if (z > 0 && vectors[x, z - 1] != null && vectors[x, z - 1][0].y == y && vectors[x, z - 1][0].x == ax && vectors[x, z - 1][2].x == sx) {
-                    sz = vectors[x, z - 1][0].z;
-                    vectors[x, z - 1] = null;
-                    indice[objectID - 1] -= 4;
-                }*/
-
             //1
             vectors[x, z][0].x = ax;
             vectors[x, z][0].y = y;
-            vectors[x, z][0].z = sz;
+            vectors[x, z][0].z = z;
 
             //2
             vectors[x, z][1].x = sx;
             vectors[x, z][1].y = y;
-            vectors[x, z][1].z = sz;
+            vectors[x, z][1].z = z;
 
             //3
             vectors[x, z][2].x = sx;
@@ -287,42 +272,102 @@ public class Mesher {
         return values;
     }
 
-    public static Stack<int> GreedyMeshing (MeshedValues values, int maxSize, int objectID) {
-        /* Stack<int> vertices = new Stack<int> ();
-         int pos = 0;
-         for (int side = 0; side < 6; side++) {
-             int[, , , ] primitives = values.vertices[objectID][side];
-             for (int x = 0; x < Constants.CHUNK_SIZE1D; x++) {
-                 for (int z = 0; z < Constants.CHUNK_SIZE1D; z++) {
-                     if (primitives[x, z, 2, 1] > 0 && primitives[x, z, 0, 0] >= 0 || primitives[x, z, 0, 0] > 0) {
-                         if (pos < maxSize) {
-                             switch (side) {
-                                 case 0:
-                                     if (x > 0 && primitives[x - 1, z, 2, 1] > 0 && primitives[x - 1, z, 0, 0] > 0 && primitives[x, z - 1, 0, 0] == primitives[x, z, 2, 1] && primitives[x, z - 1, 2, 0] == primitives[x, z, 0, 1]) {
-                                         primitives[x, z, 0, 0] = primitives[x - 1, z, 0, 0];
-                                         primitives[x, z, 3, 0] = primitives[x - 1, z, 3, 0];
+    public static Stack<Position[]> GreedyMeshing (int side, Position[, ][] primitives) {
+        Stack<Position[]> vertices = new Stack<Position[]> ();
+        for (int z = 0; z < Constants.CHUNK_SIZE1D; z++) {
+            for (int x = 0; x < Constants.CHUNK_SIZE1D; x++) {
+                if (primitives[x, z] != null) {
+                    switch (side) {
+                        case 0:
+                            if (primitives[x, z][0].delete) {
+                                primitives[x, z] = null;
+                                continue;
+                            } else if (x < Constants.CHUNK_SIZE1D - 1 && primitives[x + 1, z] != null) {
+                                if (primitives[x + 1, z][0].delete) {
+                                    primitives[x + 1, z] = null;
+                                } else if (primitives[x + 1, z][0].y == primitives[x, z][0].y && primitives[x, z][2].y == primitives[x + 1, z][2].y) {
+                                    primitives[x, z][1].x = primitives[x + 1, z][1].x;
+                                    primitives[x, z][2].x = primitives[x + 1, z][2].x;
+                                    primitives[x + 1, z] = primitives[x, z];
+                                    primitives[x, z] = null;
+                                    continue;
+                                }
+                            }
+                            vertices.Push (primitives[x, z]);
+                            break;
+                        case 1:
+                            if (x < Constants.CHUNK_SIZE1D - 1 && primitives[x + 1, z] != null &&
+                                primitives[x + 1, z][2].y == primitives[x + 1, z][2].y && primitives[x + 1, z][0].y == primitives[x + 1, z][0].y) {
+                                primitives[x, z][0].x = primitives[x + 1, z][0].x;
+                                primitives[x, z][3].x = primitives[x + 1, z][3].x;
+                                primitives[x + 1, z] = primitives[x, z];
+                                primitives[x, z] = null;
+                                continue;
+                            }
+                            vertices.Push (primitives[x, z]);
+                            break;
+                        case 2:
+                            if (z < Constants.CHUNK_SIZE1D - 1 && primitives[x, z + 1] != null &&
+                                primitives[x, z][2].y == primitives[x, z + 1][2].y && primitives[x, z][0].y == primitives[x, z + 1][0].y) {
+                                primitives[x, z][1].z = primitives[x, z + 1][1].z;
+                                primitives[x, z][2].z = primitives[x, z + 1][2].z;
+                                primitives[x, z + 1] = primitives[x, z];
+                                primitives[x, z] = null;
+                                continue;
+                            }
+                            vertices.Push (primitives[x, z]);
+                            break;
+                        case 3:
+                            if (primitives[x, z][0].delete) {
+                                primitives[x, z] = null;
+                                continue;
+                            } else if (z < Constants.CHUNK_SIZE1D - 1 && primitives[x, z + 1] != null) {
+                                if (primitives[x, z + 1][0].delete) {
+                                    primitives[x, z + 1] = null;
+                                } else if (primitives[x, z + 1][0].y == primitives[x, z][0].y && primitives[x, z][2].y == primitives[x, z + 1][2].y) {
+                                    primitives[x, z][0].z = primitives[x, z + 1][0].z;
+                                    primitives[x, z][3].z = primitives[x, z + 1][3].z;
+                                    primitives[x, z + 1] = primitives[x, z];
+                                    primitives[x, z] = null;
+                                    continue;
+                                }
+                            }
+                            vertices.Push (primitives[x, z]);
+                            break;
+                        case 4:
+                            if (z < Constants.CHUNK_SIZE1D - 1 && primitives[x, z + 1] != null &&
+                                primitives[x, z + 1][0].x == primitives[x, z][0].x &&
+                                primitives[x, z + 1][1].x == primitives[x, z][1].x &&
+                                primitives[x, z + 1][0].y == primitives[x, z][0].y) {
 
-                                         for (int s = 0; s < 4; s++) {
-                                             primitives[x - 1, z, s, 0] = -147457;
-                                         }
-                                     }
-                                     break;
-                                 case 1:
-                                     break;
-                                 case 2:
-                                     break;
-                                 case 3:
-                                     break;
-                                 case 4:
-                                     break;
-                                 case 5:
-                                     break;
-                             }
-                         }
-                     }
-                 }
-             }
-         }*/
-        return null;
+                                primitives[x, z][3].z = primitives[x, z + 1][3].z;
+                                primitives[x, z][2].z = primitives[x, z + 1][2].z;
+                                primitives[x, z + 1] = primitives[x, z];
+                                primitives[x, z] = null;
+                                continue;
+                            }
+                            vertices.Push (primitives[x, z]);
+                            break;
+
+                        case 5:
+                            if (z < Constants.CHUNK_SIZE1D - 1 && primitives[x, z + 1] != null &&
+                                primitives[x, z + 1][0].x == primitives[x, z][0].x &&
+                                primitives[x, z + 1][2].x == primitives[x, z][2].x &&
+                                primitives[x, z + 1][0].y == primitives[x, z][0].y) {
+
+                                primitives[x, z][3].z = primitives[x, z + 1][3].z;
+                                primitives[x, z][2].z = primitives[x, z + 1][2].z;
+                                primitives[x, z + 1] = primitives[x, z];
+                                primitives[x, z] = null;
+                                continue;
+                            }
+
+                            vertices.Push (primitives[x, z]);
+                            break;
+                    }
+                }
+            }
+        }
+        return vertices;
     }
 }
