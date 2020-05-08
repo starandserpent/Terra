@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 public class Mesher {
@@ -272,8 +273,7 @@ public class Mesher {
         return values;
     }
 
-    public static Stack<Position[]> GreedyMeshing (int side, Position[, ][] primitives) {
-        Stack<Position[]> vertices = new Stack<Position[]> ();
+    public static Stack<Position[]> GreedyMeshing (int side, Position[, ][] primitives, Stack<Position[]> stack) {
         for (int z = 0; z < Constants.CHUNK_SIZE1D; z++) {
             for (int x = 0; x < Constants.CHUNK_SIZE1D; x++) {
                 if (primitives[x, z] != null) {
@@ -293,18 +293,18 @@ public class Mesher {
                                     continue;
                                 }
                             }
-                            vertices.Push (primitives[x, z]);
+                            stack.Push (primitives[x, z]);
                             break;
                         case 1:
                             if (x < Constants.CHUNK_SIZE1D - 1 && primitives[x + 1, z] != null &&
-                                primitives[x + 1, z][2].y == primitives[x + 1, z][2].y && primitives[x + 1, z][0].y == primitives[x + 1, z][0].y) {
+                                primitives[x + 1, z][2].y == primitives[x, z][2].y && primitives[x, z][0].y == primitives[x + 1, z][0].y) {
                                 primitives[x, z][0].x = primitives[x + 1, z][0].x;
                                 primitives[x, z][3].x = primitives[x + 1, z][3].x;
                                 primitives[x + 1, z] = primitives[x, z];
                                 primitives[x, z] = null;
                                 continue;
                             }
-                            vertices.Push (primitives[x, z]);
+                            stack.Push (primitives[x, z]);
                             break;
                         case 2:
                             if (z < Constants.CHUNK_SIZE1D - 1 && primitives[x, z + 1] != null &&
@@ -315,7 +315,7 @@ public class Mesher {
                                 primitives[x, z] = null;
                                 continue;
                             }
-                            vertices.Push (primitives[x, z]);
+                            stack.Push (primitives[x, z]);
                             break;
                         case 3:
                             if (primitives[x, z][0].delete) {
@@ -332,7 +332,7 @@ public class Mesher {
                                     continue;
                                 }
                             }
-                            vertices.Push (primitives[x, z]);
+                            stack.Push (primitives[x, z]);
                             break;
                         case 4:
                             if (z < Constants.CHUNK_SIZE1D - 1 && primitives[x, z + 1] != null &&
@@ -346,7 +346,7 @@ public class Mesher {
                                 primitives[x, z] = null;
                                 continue;
                             }
-                            vertices.Push (primitives[x, z]);
+                            stack.Push (primitives[x, z]);
                             break;
 
                         case 5:
@@ -362,12 +362,12 @@ public class Mesher {
                                 continue;
                             }
 
-                            vertices.Push (primitives[x, z]);
+                            stack.Push (primitives[x, z]);
                             break;
                     }
                 }
             }
         }
-        return vertices;
+        return stack;
     }
 }
