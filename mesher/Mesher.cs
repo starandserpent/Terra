@@ -32,7 +32,7 @@ public class Mesher {
             if (vertices[objectID - 1] == null) {
                 vertices[objectID - 1] = new Position[6][][];
                 for (int s = 0; s < 6; s++) {
-                    vertices[objectID - 1][s] = ArrayPool<Position[]>.Shared.Rent (Constants.CHUNK_SIZE1D * Constants.CHUNK_SIZE1D);
+                    vertices[objectID - 1][s] = new Position[Constants.CHUNK_SIZE1D * Constants.CHUNK_SIZE1D][];
                 }
             }
 
@@ -54,35 +54,39 @@ public class Mesher {
 
             //Front
             vectors[x + (z * Constants.CHUNK_SIZE1D)] = new Position[4];
+            Position[] positions = vectors[x + (z * Constants.CHUNK_SIZE1D)];
 
             //1
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][0].x = x;
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][0].y = y;
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][0].z = z;
+            positions[0].x = x;
+            positions[0].y = y;
+            positions[0].z = z;
 
             //2
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][1].x = ax;
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][1].y = y;
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][1].z = z;
+            positions[1].x = ax;
+            positions[1].y = y;
+            positions[1].z = z;
 
             //3
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][2].x = ax;
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][2].y = ay;
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][2].z = z;
+            positions[2].x = ax;
+            positions[2].y = ay;
+            positions[2].z = z;
 
             //4
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][3].x = x;
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][3].y = ay;
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][3].z = z;
+            positions[3].x = x;
+            positions[3].y = ay;
+            positions[3].z = z;
 
-            if (z > 0 && vectors[x + (z * Constants.CHUNK_SIZE1D) - Constants.CHUNK_SIZE1D] != null) {
-                if (vectors[x + (z * Constants.CHUNK_SIZE1D) - Constants.CHUNK_SIZE1D][2].y >= ay) {
-                    for (int s = 0; s < 4; s++) {
-                        vectors[x + (z * Constants.CHUNK_SIZE1D)][s].delete = true;
+            if (z > 0) {
+                Position[] sidePosition = vectors[x + (z * Constants.CHUNK_SIZE1D) - Constants.CHUNK_SIZE1D];
+                if (sidePosition != null) {
+                    if (sidePosition[2].y >= ay) {
+                        for (int s = 0; s < 4; s++) {
+                            positions[s].delete = true;
+                        }
+                    } else if (sidePosition[2].y < ay && sidePosition[0].y >= y) {
+                        positions[0].y = sidePosition[2].y;
+                        positions[1].y = sidePosition[2].y;
                     }
-                } else if (vectors[x + (z * Constants.CHUNK_SIZE1D) - Constants.CHUNK_SIZE1D][2].y < ay && vectors[x + (z * Constants.CHUNK_SIZE1D) - Constants.CHUNK_SIZE1D][0].y >= y) {
-                    vectors[x + (z * Constants.CHUNK_SIZE1D)][0].y = vectors[x + (z * Constants.CHUNK_SIZE1D) - Constants.CHUNK_SIZE1D][2].y;
-                    vectors[x + (z * Constants.CHUNK_SIZE1D)][1].y = vectors[x + (z * Constants.CHUNK_SIZE1D) - Constants.CHUNK_SIZE1D][2].y;
                 }
             }
 
@@ -91,34 +95,38 @@ public class Mesher {
             //Back
             vectors = vertices[objectID - 1][1];
             vectors[x + (z * Constants.CHUNK_SIZE1D)] = new Position[4];
+            positions = vectors[x + (z * Constants.CHUNK_SIZE1D)];
 
             //1
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][0].x = ax;
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][0].y = y;
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][0].z = az;
+            positions[0].x = ax;
+            positions[0].y = y;
+            positions[0].z = az;
 
             //2
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][1].x = x;
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][1].y = y;
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][1].z = az;
+            positions[1].x = x;
+            positions[1].y = y;
+            positions[1].z = az;
 
             //3
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][2].x = x;
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][2].y = ay;
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][2].z = az;
+            positions[2].x = x;
+            positions[2].y = ay;
+            positions[2].z = az;
 
-            //5
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][3].x = ax;
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][3].y = ay;
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][3].z = az;
+            //4
+            positions[3].x = ax;
+            positions[3].y = ay;
+            positions[3].z = az;
 
-            if (z > 0 && vectors[x + (z * Constants.CHUNK_SIZE1D) - Constants.CHUNK_SIZE1D] != null) {
-                if (vectors[x + (z * Constants.CHUNK_SIZE1D) - Constants.CHUNK_SIZE1D][2].y > ay && vectors[x + (z * Constants.CHUNK_SIZE1D) - Constants.CHUNK_SIZE1D][0].y <= y) {
-                    vectors[x + (z * Constants.CHUNK_SIZE1D) - Constants.CHUNK_SIZE1D][0].y = ay;
-                    vectors[x + (z * Constants.CHUNK_SIZE1D) - Constants.CHUNK_SIZE1D][1].y = ay;
-                } else if (vectors[x + (z * Constants.CHUNK_SIZE1D) - Constants.CHUNK_SIZE1D][2].y <= ay) {
-                    vectors[x + (z * Constants.CHUNK_SIZE1D) - Constants.CHUNK_SIZE1D] = null;
-                    indice[objectID - 1] -= 4;
+            if (z > 0) {
+                Position[] sidePosition = vectors[x + (z * Constants.CHUNK_SIZE1D) - Constants.CHUNK_SIZE1D];
+                if (sidePosition != null) {
+                    if (sidePosition[2].y > ay && sidePosition[0].y <= y) {
+                        sidePosition[0].y = ay;
+                        sidePosition[1].y = ay;
+                    } else if (sidePosition[2].y <= ay) {
+                        vectors[x + (z * Constants.CHUNK_SIZE1D) - Constants.CHUNK_SIZE1D] = null;
+                        indice[objectID - 1] -= 4;
+                    }
                 }
             }
 
@@ -127,34 +135,38 @@ public class Mesher {
             //Right
             vectors = vertices[objectID - 1][2];
             vectors[x + (z * Constants.CHUNK_SIZE1D)] = new Position[4];
+            positions = vectors[x + (z * Constants.CHUNK_SIZE1D)];
 
             //1
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][0].x = ax;
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][0].y = y;
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][0].z = z;
+            positions[0].x = ax;
+            positions[0].y = y;
+            positions[0].z = z;
 
             //2
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][1].x = ax;
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][1].y = y;
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][1].z = az;
+            positions[1].x = ax;
+            positions[1].y = y;
+            positions[1].z = az;
 
             //3
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][2].x = ax;
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][2].y = ay;
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][2].z = az;
+            positions[2].x = ax;
+            positions[2].y = ay;
+            positions[2].z = az;
 
             //4
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][3].x = ax;
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][3].y = ay;
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][3].z = z;
+            positions[3].x = ax;
+            positions[3].y = ay;
+            positions[3].z = z;
 
-            if (x > 0 && vectors[x + (z * Constants.CHUNK_SIZE1D) - 1] != null) {
-                if (vectors[x + (z * Constants.CHUNK_SIZE1D) - 1][2].y > ay && vectors[x + (z * Constants.CHUNK_SIZE1D) - 1][0].y <= y) {
-                    vectors[x + (z * Constants.CHUNK_SIZE1D) - 1][0].y = ay;
-                    vectors[x + (z * Constants.CHUNK_SIZE1D) - 1][1].y = ay;
-                } else if (vectors[x + (z * Constants.CHUNK_SIZE1D) - 1][2].y <= ay) {
-                    vectors[x + (z * Constants.CHUNK_SIZE1D) - 1] = null;
-                    indice[objectID - 1] -= 4;
+            if (x > 0) {
+                Position[] sidePosition = vectors[x + (z * Constants.CHUNK_SIZE1D) - 1];
+                if (sidePosition != null) {
+                    if (sidePosition[2].y > ay && sidePosition[0].y <= y) {
+                        sidePosition[0].y = ay;
+                        sidePosition[1].y = ay;
+                    } else if (sidePosition[2].y <= ay) {
+                        vectors[x + (z * Constants.CHUNK_SIZE1D) - 1] = null;
+                        indice[objectID - 1] -= 4;
+                    }
                 }
             }
 
@@ -163,35 +175,39 @@ public class Mesher {
             //Left
             vectors = vertices[objectID - 1][3];
             vectors[x + (z * Constants.CHUNK_SIZE1D)] = new Position[4];
+            positions = vectors[x + (z * Constants.CHUNK_SIZE1D)];
 
             //1
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][0].x = x;
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][0].y = y;
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][0].z = az;
+            positions[0].x = x;
+            positions[0].y = y;
+            positions[0].z = az;
 
             //2
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][1].x = x;
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][1].y = y;
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][1].z = z;
+            positions[1].x = x;
+            positions[1].y = y;
+            positions[1].z = z;
 
             //3
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][2].x = x;
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][2].y = ay;
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][2].z = z;
+            positions[2].x = x;
+            positions[2].y = ay;
+            positions[2].z = z;
 
             //4
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][3].x = x;
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][3].y = ay;
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][3].z = az;
+            positions[3].x = x;
+            positions[3].y = ay;
+            positions[3].z = az;
 
-            if (x > 0 && vectors[x + (z * Constants.CHUNK_SIZE1D) - 1] != null) {
-                if (vectors[x + (z * Constants.CHUNK_SIZE1D) - 1][2].y >= ay) {
-                    for (int s = 0; s < 4; s++) {
-                        vectors[x + (z * Constants.CHUNK_SIZE1D)][s].delete = true;
+            if (x > 0) {
+                Position[] sidePosition = vectors[x + (z * Constants.CHUNK_SIZE1D) - 1];
+                if (sidePosition != null) {
+                    if (sidePosition[2].y >= ay) {
+                        for (int s = 0; s < 4; s++) {
+                            vectors[x + (z * Constants.CHUNK_SIZE1D)][s].delete = true;
+                        }
+                    } else if (sidePosition[2].y < ay && sidePosition[0].y >= y) {
+                        positions[0].y = sidePosition[2].y;
+                        positions[1].y = sidePosition[2].y;
                     }
-                } else if (vectors[x + (z * Constants.CHUNK_SIZE1D) - 1][2].y < ay && vectors[x + (z * Constants.CHUNK_SIZE1D) - 1][0].y >= y) {
-                    vectors[x + (z * Constants.CHUNK_SIZE1D)][0].y = vectors[x + (z * Constants.CHUNK_SIZE1D) - 1][2].y;
-                    vectors[x + (z * Constants.CHUNK_SIZE1D)][1].y = vectors[x + (z * Constants.CHUNK_SIZE1D) - 1][2].y;
                 }
             }
 
@@ -200,69 +216,76 @@ public class Mesher {
             //Top
             vectors = vertices[objectID - 1][4];
             vectors[x + (z * Constants.CHUNK_SIZE1D)] = new Position[4];
-
+            positions = vectors[x + (z * Constants.CHUNK_SIZE1D)];
             //Naive Greedy Meshing
             int sx = x;
 
-            if (x > 0 && vectors[x + (z * Constants.CHUNK_SIZE1D) - 1] != null && vectors[x + (z * Constants.CHUNK_SIZE1D) - 1][0].y == ay) {
-                sx = vectors[x + (z * Constants.CHUNK_SIZE1D) - 1][0].x;
-                vectors[x + (z * Constants.CHUNK_SIZE1D) - 1] = null;
-                indice[objectID - 1] -= 4;
+            if (x > 0) {
+                Position[] sidePosition = vectors[x + (z * Constants.CHUNK_SIZE1D) - 1];
+                if (sidePosition != null && sidePosition[0].y == ay) {
+                    sx = sidePosition[0].x;
+                    vectors[x + (z * Constants.CHUNK_SIZE1D) - 1] = null;
+                    indice[objectID - 1] -= 4;
+                }
             }
 
             //1
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][0].x = sx;
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][0].y = ay;
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][0].z = z;
+            positions[0].x = sx;
+            positions[0].y = ay;
+            positions[0].z = z;
 
             //2
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][1].x = ax;
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][1].y = ay;
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][1].z = z;
+            positions[1].x = ax;
+            positions[1].y = ay;
+            positions[1].z = z;
 
             //3
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][2].x = ax;
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][2].y = ay;
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][2].z = az;
+            positions[2].x = ax;
+            positions[2].y = ay;
+            positions[2].z = az;
 
             //4
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][3].x = sx;
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][3].y = ay;
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][3].z = az;
+            positions[3].x = sx;
+            positions[3].y = ay;
+            positions[3].z = az;
 
             indice[objectID - 1] += 4;
 
             //Bottom
             vectors = vertices[objectID - 1][5];
             vectors[x + (z * Constants.CHUNK_SIZE1D)] = new Position[4];
+            positions = vectors[x + (z * Constants.CHUNK_SIZE1D)];
 
             //Naive Greedy Meshing
             sx = x;
-            if (x > 0 && vectors[x + (z * Constants.CHUNK_SIZE1D) - 1] != null && vectors[x + (z * Constants.CHUNK_SIZE1D) - 1][0].y == y) {
-                sx = vectors[x + (z * Constants.CHUNK_SIZE1D) - 1][1].x;
-                vectors[x + (z * Constants.CHUNK_SIZE1D) - 1] = null;
-                indice[objectID - 1] -= 4;
+            if (x > 0) {
+                Position[] sidePosition = vectors[x + (z * Constants.CHUNK_SIZE1D) - 1];
+                if (sidePosition != null && sidePosition[0].y == y) {
+                    sx = sidePosition[1].x;
+                    vectors[x + (z * Constants.CHUNK_SIZE1D) - 1] = null;
+                    indice[objectID - 1] -= 4;
+                }
             }
 
             //1
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][0].x = ax;
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][0].y = y;
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][0].z = z;
+            positions[0].x = ax;
+            positions[0].y = y;
+            positions[0].z = z;
 
             //2
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][1].x = sx;
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][1].y = y;
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][1].z = z;
+            positions[1].x = sx;
+            positions[1].y = y;
+            positions[1].z = z;
 
             //3
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][2].x = sx;
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][2].y = y;
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][2].z = az;
+            positions[2].x = sx;
+            positions[2].y = y;
+            positions[2].z = az;
 
             //4
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][3].x = ax;
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][3].y = y;
-            vectors[x + (z * Constants.CHUNK_SIZE1D)][3].z = az;
+            positions[3].x = ax;
+            positions[3].y = y;
+            positions[3].z = az;
 
             indice[objectID - 1] += 4;
 
@@ -277,106 +300,116 @@ public class Mesher {
     public static Stack<Position[]> GreedyMeshing (int side, Position[][] primitives, Stack<Position[]> stack) {
         for (int x = 0; x < Constants.CHUNK_SIZE1D; x++) {
             for (int z = 0; z < Constants.CHUNK_SIZE1D; z++) {
-                if (primitives[x + (z * Constants.CHUNK_SIZE1D)] != null) {
+                Position[] positions = primitives[x + (z * Constants.CHUNK_SIZE1D)];
+                if (positions != null) {
                     switch (side) {
                         case 0:
-                            if (primitives[x + (z * Constants.CHUNK_SIZE1D)][0].delete) {
-                                primitives[x + (z * Constants.CHUNK_SIZE1D)] = null;
-                                continue;
-                            } else if (x < Constants.CHUNK_SIZE1D - 1 && primitives[x + (z * Constants.CHUNK_SIZE1D) + 1] != null) {
-                                if (primitives[x + (z * Constants.CHUNK_SIZE1D) + 1][0].delete) {
-                                    primitives[x + (z * Constants.CHUNK_SIZE1D) + 1] = null;
-                                } else if (primitives[x + (z * Constants.CHUNK_SIZE1D) + 1][0].y == primitives[x + (z * Constants.CHUNK_SIZE1D)][0].y &&
-                                    primitives[x + (z * Constants.CHUNK_SIZE1D)][2].y == primitives[x + (z * Constants.CHUNK_SIZE1D) + 1][2].y) {
-                                    primitives[x + (z * Constants.CHUNK_SIZE1D)][1].x = primitives[x + (z * Constants.CHUNK_SIZE1D) + 1][1].x;
-                                    primitives[x + (z * Constants.CHUNK_SIZE1D)][2].x = primitives[x + (z * Constants.CHUNK_SIZE1D) + 1][2].x;
-                                    primitives[x + (z * Constants.CHUNK_SIZE1D) + 1] = primitives[x + (z * Constants.CHUNK_SIZE1D)];
-                                    primitives[x + (z * Constants.CHUNK_SIZE1D)] = null;
-                                    continue;
+                            if (x < Constants.CHUNK_SIZE1D - 1) {
+                                Position[] sidePosition = primitives[x + (z * Constants.CHUNK_SIZE1D) + 1];
+                                if (sidePosition != null) {
+                                    if (sidePosition[0].delete) {
+                                        primitives[x + (z * Constants.CHUNK_SIZE1D) + 1] = null;
+                                    } else if (sidePosition[0].y == positions[0].y &&
+                                        positions[2].y == sidePosition[2].y) {
+
+                                        positions[1].x = sidePosition[1].x;
+                                        positions[2].x = sidePosition[2].x;
+                                        primitives[x + (z * Constants.CHUNK_SIZE1D) + 1] = positions;
+                                        primitives[x + (z * Constants.CHUNK_SIZE1D)] = null;
+                                        continue;
+                                    }
                                 }
                             }
-                            stack.Push (primitives[x + (z * Constants.CHUNK_SIZE1D)]);
+                            stack.Push (positions);
                             break;
                         case 1:
-                            if (x < Constants.CHUNK_SIZE1D - 1 && primitives[x + (z * Constants.CHUNK_SIZE1D) + 1] != null &&
-                                primitives[x + (z * Constants.CHUNK_SIZE1D) + 1][2].y == primitives[x + (z * Constants.CHUNK_SIZE1D)][2].y &&
-                                primitives[x + (z * Constants.CHUNK_SIZE1D)][0].y == primitives[x + (z * Constants.CHUNK_SIZE1D) + 1][0].y) {
+                            if (x < Constants.CHUNK_SIZE1D - 1) {
+                                Position[] sidePosition = primitives[x + (z * Constants.CHUNK_SIZE1D) + 1];
+                                if (sidePosition != null &&
+                                    sidePosition[2].y == primitives[x + (z * Constants.CHUNK_SIZE1D)][2].y &&
+                                    positions[0].y == sidePosition[0].y) {
 
-                                primitives[x + (z * Constants.CHUNK_SIZE1D)][0].x = primitives[x + (z * Constants.CHUNK_SIZE1D) + 1][0].x;
-                                primitives[x + (z * Constants.CHUNK_SIZE1D)][3].x = primitives[x + (z * Constants.CHUNK_SIZE1D) + 1][3].x;
-                                primitives[x + (z * Constants.CHUNK_SIZE1D) + 1] = primitives[x + (z * Constants.CHUNK_SIZE1D)];
-                                primitives[x + (z * Constants.CHUNK_SIZE1D)] = null;
-                                continue;
-                            }
-                            stack.Push (primitives[x + (z * Constants.CHUNK_SIZE1D)]);
-                            break;
-                        case 2:
-                            if (z < Constants.CHUNK_SIZE1D - 1 && primitives[x + (z * Constants.CHUNK_SIZE1D) + Constants.CHUNK_SIZE1D] != null &&
-                                primitives[x + (z * Constants.CHUNK_SIZE1D)][2].y == primitives[x + (z * Constants.CHUNK_SIZE1D) + Constants.CHUNK_SIZE1D][2].y &&
-                                primitives[x + (z * Constants.CHUNK_SIZE1D)][0].y == primitives[x + (z * Constants.CHUNK_SIZE1D) + Constants.CHUNK_SIZE1D][0].y) {
-
-                                primitives[x + (z * Constants.CHUNK_SIZE1D)][1].z = primitives[x + (z * Constants.CHUNK_SIZE1D) + Constants.CHUNK_SIZE1D][1].z;
-                                primitives[x + (z * Constants.CHUNK_SIZE1D)][2].z = primitives[x + (z * Constants.CHUNK_SIZE1D) + Constants.CHUNK_SIZE1D][2].z;
-                                primitives[x + (z * Constants.CHUNK_SIZE1D) + Constants.CHUNK_SIZE1D] = primitives[x + (z * Constants.CHUNK_SIZE1D)];
-                                primitives[x + (z * Constants.CHUNK_SIZE1D)] = null;
-                                continue;
-                            }
-                            stack.Push (primitives[x + (z * Constants.CHUNK_SIZE1D)]);
-                            break;
-                        case 3:
-                            if (primitives[x + (z * Constants.CHUNK_SIZE1D)][0].delete) {
-                                primitives[x + (z * Constants.CHUNK_SIZE1D)] = null;
-                                continue;
-                            } else if (z < Constants.CHUNK_SIZE1D - 1 && primitives[x + (z * Constants.CHUNK_SIZE1D) + Constants.CHUNK_SIZE1D] != null) {
-                                if (primitives[x + (z * Constants.CHUNK_SIZE1D) + Constants.CHUNK_SIZE1D][0].delete) {
-                                    primitives[x + (z * Constants.CHUNK_SIZE1D) + Constants.CHUNK_SIZE1D] = null;
-                                } else if (primitives[x + (z * Constants.CHUNK_SIZE1D) + Constants.CHUNK_SIZE1D][0].y == primitives[x + (z * Constants.CHUNK_SIZE1D)][0].y &&
-                                    primitives[x + (z * Constants.CHUNK_SIZE1D)][2].y == primitives[x + (z * Constants.CHUNK_SIZE1D) + Constants.CHUNK_SIZE1D][2].y) {
-
-                                    primitives[x + (z * Constants.CHUNK_SIZE1D)][0].z = primitives[x + (z * Constants.CHUNK_SIZE1D) + Constants.CHUNK_SIZE1D][0].z;
-                                    primitives[x + (z * Constants.CHUNK_SIZE1D)][3].z = primitives[x + (z * Constants.CHUNK_SIZE1D) + Constants.CHUNK_SIZE1D][3].z;
-                                    primitives[x + (z * Constants.CHUNK_SIZE1D) + Constants.CHUNK_SIZE1D] = primitives[x + (z * Constants.CHUNK_SIZE1D)];
+                                    positions[0].x = sidePosition[0].x;
+                                    positions[3].x = sidePosition[3].x;
+                                    primitives[x + (z * Constants.CHUNK_SIZE1D) + 1] = positions;
                                     primitives[x + (z * Constants.CHUNK_SIZE1D)] = null;
                                     continue;
                                 }
                             }
-                            stack.Push (primitives[x + (z * Constants.CHUNK_SIZE1D)]);
+                            stack.Push (positions);
+                            break;
+                        case 2:
+                            if (z < Constants.CHUNK_SIZE1D - 1) {
+                                Position[] sidePosition = primitives[x + (z * Constants.CHUNK_SIZE1D) + Constants.CHUNK_SIZE1D];
+                                if (sidePosition != null &&
+                                    positions[2].y == sidePosition[2].y &&
+                                    positions[0].y == sidePosition[0].y) {
+
+                                    positions[1].z = sidePosition[1].z;
+                                    positions[2].z = sidePosition[2].z;
+                                    primitives[x + (z * Constants.CHUNK_SIZE1D) + Constants.CHUNK_SIZE1D] = positions;
+                                    primitives[x + (z * Constants.CHUNK_SIZE1D)] = null;
+                                    continue;
+                                }
+                            }
+                            stack.Push (positions);
+                            break;
+                        case 3:
+                            if (z < Constants.CHUNK_SIZE1D - 1) {
+                                Position[] sidePosition = primitives[x + (z * Constants.CHUNK_SIZE1D) + Constants.CHUNK_SIZE1D];
+                                if (sidePosition != null) {
+                                    if (sidePosition[0].delete) {
+                                        primitives[x + (z * Constants.CHUNK_SIZE1D) + Constants.CHUNK_SIZE1D] = null;
+                                    } else if (sidePosition[0].y == positions[0].y && sidePosition[2].y == positions[2].y) {
+                                        positions[0].z = sidePosition[0].z;
+                                        positions[3].z = sidePosition[3].z;
+                                        primitives[x + (z * Constants.CHUNK_SIZE1D) + Constants.CHUNK_SIZE1D] = positions;
+                                        primitives[x + (z * Constants.CHUNK_SIZE1D)] = null;
+                                        continue;
+                                    }
+                                }
+                            }
+                            stack.Push (positions);
                             break;
                         case 4:
-                            if (z < Constants.CHUNK_SIZE1D - 1 && primitives[x + (z * Constants.CHUNK_SIZE1D) + Constants.CHUNK_SIZE1D] != null &&
-                                primitives[x + (z * Constants.CHUNK_SIZE1D) + Constants.CHUNK_SIZE1D][0].x == primitives[x + (z * Constants.CHUNK_SIZE1D)][0].x &&
-                                primitives[x + (z * Constants.CHUNK_SIZE1D) + Constants.CHUNK_SIZE1D][1].x == primitives[x + (z * Constants.CHUNK_SIZE1D)][1].x &&
-                                primitives[x + (z * Constants.CHUNK_SIZE1D) + Constants.CHUNK_SIZE1D][0].y == primitives[x + (z * Constants.CHUNK_SIZE1D)][0].y) {
+                            if (z < Constants.CHUNK_SIZE1D - 1) {
+                                Position[] sidePosition = primitives[x + (z * Constants.CHUNK_SIZE1D) + Constants.CHUNK_SIZE1D];
+                                if (sidePosition != null &&
+                                    sidePosition[0].x == positions[0].x && sidePosition[1].x == positions[1].x &&
+                                    sidePosition[0].y == positions[0].y) {
 
-                                primitives[x + (z * Constants.CHUNK_SIZE1D)][3].z = primitives[x + (z * Constants.CHUNK_SIZE1D) + Constants.CHUNK_SIZE1D][3].z;
-                                primitives[x + (z * Constants.CHUNK_SIZE1D)][2].z = primitives[x + (z * Constants.CHUNK_SIZE1D) + Constants.CHUNK_SIZE1D][2].z;
-                                primitives[x + (z * Constants.CHUNK_SIZE1D) + Constants.CHUNK_SIZE1D] = primitives[x + (z * Constants.CHUNK_SIZE1D)];
-                                primitives[x + (z * Constants.CHUNK_SIZE1D)] = null;
-                                continue;
+                                    positions[3].z = sidePosition[3].z;
+                                    positions[2].z = sidePosition[2].z;
+                                    primitives[x + (z * Constants.CHUNK_SIZE1D) + Constants.CHUNK_SIZE1D] = positions;
+                                    primitives[x + (z * Constants.CHUNK_SIZE1D)] = null;
+                                    continue;
+                                }
                             }
-                            stack.Push (primitives[x + (z * Constants.CHUNK_SIZE1D)]);
+                            stack.Push (positions);
                             break;
 
                         case 5:
-                            if (z < Constants.CHUNK_SIZE1D - 1 && primitives[x + (z * Constants.CHUNK_SIZE1D) + Constants.CHUNK_SIZE1D] != null &&
-                                primitives[x + (z * Constants.CHUNK_SIZE1D) + Constants.CHUNK_SIZE1D][0].x == primitives[x + (z * Constants.CHUNK_SIZE1D)][0].x &&
-                                primitives[x + (z * Constants.CHUNK_SIZE1D) + Constants.CHUNK_SIZE1D][2].x == primitives[x + (z * Constants.CHUNK_SIZE1D)][2].x &&
-                                primitives[x + (z * Constants.CHUNK_SIZE1D) + Constants.CHUNK_SIZE1D][0].y == primitives[x + (z * Constants.CHUNK_SIZE1D)][0].y) {
+                            if (z < Constants.CHUNK_SIZE1D - 1) {
+                                Position[] sidePosition = primitives[x + (z * Constants.CHUNK_SIZE1D) + Constants.CHUNK_SIZE1D];
+                                if (sidePosition != null &&
+                                    sidePosition[0].x == positions[0].x &&
+                                    sidePosition[2].x == positions[2].x &&
+                                    sidePosition[0].y == positions[0].y) {
 
-                                primitives[x + (z * Constants.CHUNK_SIZE1D)][3].z = primitives[x + (z * Constants.CHUNK_SIZE1D) + Constants.CHUNK_SIZE1D][3].z;
-                                primitives[x + (z * Constants.CHUNK_SIZE1D)][2].z = primitives[x + (z * Constants.CHUNK_SIZE1D) + Constants.CHUNK_SIZE1D][2].z;
-                                primitives[x + (z * Constants.CHUNK_SIZE1D) + Constants.CHUNK_SIZE1D] = primitives[x + (z * Constants.CHUNK_SIZE1D)];
-                                primitives[x + (z * Constants.CHUNK_SIZE1D)] = null;
-                                continue;
+                                    positions[3].z = sidePosition[3].z;
+                                    positions[2].z = sidePosition[2].z;
+                                    primitives[x + (z * Constants.CHUNK_SIZE1D) + Constants.CHUNK_SIZE1D] = positions;
+                                    primitives[x + (z * Constants.CHUNK_SIZE1D)] = null;
+                                    continue;
+                                }
                             }
 
-                            stack.Push (primitives[x + (z * Constants.CHUNK_SIZE1D)]);
+                            stack.Push (positions);
                             break;
                     }
                 }
             }
         }
-        ArrayPool<Position[]>.Shared.Return (primitives);
         return stack;
     }
 }
