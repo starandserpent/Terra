@@ -4,13 +4,13 @@ public struct Position {
     public int y { get; set; }
     public int z { get; set; }
 
-    public bool delete { get; set; }
+    public int id { get; set; }
 
     public Position(int x, int y, int z){
         this.x = x;
         this.y = y;
         this.z = z;
-        this.delete = false;
+        this.id = 0;
     }
 
     public int GetMax(){
