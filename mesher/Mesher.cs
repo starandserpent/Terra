@@ -1,16 +1,23 @@
+using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
 public class Mesher {
-    public static Position[][][][] NaiveGreedyMeshing (Chunk chunk) {
-        Position[][][][] vertices = new Position[6][][][];
-        for (int s = 0; s < 6; s++) {
-            vertices[s] = new Position[Constants.CHUNK_SIZE2D][][];
-        }
+    public static Position[] NaiveGreedyMeshing (Chunk chunk, ArrayPool<Position> pool) {
+        Position pos = new Position ();
+        Position pos1 = new Position ();
+        Position pos2 = new Position ();
+        Position pos3 = new Position ();
 
+        int materials = chunk.Materials - 1;
+        Position[] vertices = pool.Rent (Constants.CHUNK_SIZE2D * materials * 6 * 4);
+        int currentLocation = 0;
+        int staticOffset = materials * 6 * 4;
         int count = 0;
         int prev = 0;
         int objectID = 0;
         int lenght;
+        int lastID = 0;
 
         for (int i = 1; count < Constants.CHUNK_SIZE3D; i++) {
 
@@ -39,313 +46,325 @@ public class Mesher {
                 lenght = size;
             }
 
+            if (lastID == objectID) {
+                lastID = 0;
+            }
+
             int ax = x + 1;
             int ay = lenght + y;
             int az = z + 1;
 
-            for (int side = 0; side < 6; side++) {
-                if (vertices[side][x + (z * Constants.CHUNK_SIZE1D)] == null) {
-                    vertices[side][x + (z * Constants.CHUNK_SIZE1D)] = new Position[chunk.Materials - 1][];
-                }
-            }
+            int location = (x + (z * Constants.CHUNK_SIZE1D)) * materials * 6;
 
             if (ay != y) {
-                //Front
-                Position[] positions;
-                int index = 0;
-                while (vertices[0][x + (z * Constants.CHUNK_SIZE1D)][index] != null) {
-                    index++;
-                }
 
-                vertices[0][x + (z * Constants.CHUNK_SIZE1D)][index] = new Position[4];
-                positions = vertices[0][x + (z * Constants.CHUNK_SIZE1D)][index];
+                //Front
+                int offset;
+
+                currentLocation = location * 4;
 
                 //1
-                positions[0].x = x;
-                positions[0].y = y;
-                positions[0].z = z;
-                positions[0].id = objectID;
+                pos.x = x;
+                pos.y = y;
+                pos.z = z;
+                pos.id = objectID;
 
                 //2
-                positions[1].x = ax;
-                positions[1].y = y;
-                positions[1].z = z;
-                positions[1].id = objectID;
+                pos1.x = ax;
+                pos1.y = y;
+                pos1.z = z;
+                pos1.id = objectID;
 
                 //3
-                positions[2].x = ax;
-                positions[2].y = ay;
-                positions[2].z = z;
-                positions[2].id = objectID;
+                pos2.x = ax;
+                pos2.y = ay;
+                pos2.z = z;
+                pos2.id = objectID;
 
                 //4
-                positions[3].x = x;
-                positions[3].y = ay;
-                positions[3].z = z;
-                positions[3].id = objectID;
+                pos3.x = x;
+                pos3.y = ay;
+                pos3.z = z;
+                pos3.id = objectID;
 
-                for (index = 0; index < chunk.Materials - 1; index++) {
-                    if (z > 0 && vertices[0][x + (z * Constants.CHUNK_SIZE1D) - Constants.CHUNK_SIZE1D] != null) {
-                        Position[] sidePosition = vertices[0][x + (z * Constants.CHUNK_SIZE1D) - Constants.CHUNK_SIZE1D][index];
-                        if (sidePosition != null) {
-                            if (sidePosition[2].y >= ay) {
-                                for (int s = 0; s < 4; s++) {
-                                    positions[s].id = 0;
-                                }
-                            } else if (sidePosition[2].y < ay && sidePosition[0].y >= y) {
-                                positions[0].y = sidePosition[2].y;
-                                positions[1].y = sidePosition[2].y;
+                if (z > 0) {
+                    for (int index = 0; index < materials; index++) {
+                        offset = (Constants.CHUNK_SIZE1D * staticOffset) - (index * 4);
+                        if (vertices[currentLocation - offset].id != 0) {
+                            if (vertices[2 + currentLocation - offset].y >= ay) {
+                                pos.id = -1;
+                            } else if (vertices[2 + currentLocation - offset].y < ay && vertices[currentLocation - offset].y >= y) {
+                                pos.y = vertices[2 + currentLocation - offset].y;
+                                pos1.y = vertices[2 + currentLocation - offset].y;
                             }
                         }
                     }
                 }
+
+                vertices[currentLocation + (lastID * 4)] = pos;
+                vertices[currentLocation + 1 + (lastID * 4)] = pos1;
+                vertices[currentLocation + 2 + (lastID * 4)] = pos2;
+                vertices[currentLocation + 3 + (lastID * 4)] = pos3;
 
                 //Back
-                index = 0;
-                while (vertices[1][x + (z * Constants.CHUNK_SIZE1D)][index] != null) {
-                    index++;
-                }
-
-                vertices[1][x + (z * Constants.CHUNK_SIZE1D)][index] = new Position[4];
-                positions = vertices[1][x + (z * Constants.CHUNK_SIZE1D)][index];
+                currentLocation = (materials + location) * 4;
 
                 //1
-                positions[0].x = ax;
-                positions[0].y = y;
-                positions[0].z = az;
-                positions[0].id = objectID;
+                pos.x = ax;
+                pos.y = y;
+                pos.z = az;
+                pos.id = objectID;
 
                 //2
-                positions[1].x = x;
-                positions[1].y = y;
-                positions[1].z = az;
-                positions[1].id = objectID;
+                pos1.x = x;
+                pos1.y = y;
+                pos1.z = az;
+                pos1.id = objectID;
 
                 //3
-                positions[2].x = x;
-                positions[2].y = ay;
-                positions[2].z = az;
-                positions[2].id = objectID;
+                pos2.x = x;
+                pos2.y = ay;
+                pos2.z = az;
+                pos2.id = objectID;
 
                 //4
-                positions[3].x = ax;
-                positions[3].y = ay;
-                positions[3].z = az;
-                positions[3].id = objectID;
+                pos3.x = ax;
+                pos3.y = ay;
+                pos3.z = az;
+                pos3.id = objectID;
 
-                for (index = 0; index < chunk.Materials - 1; index++) {
-                    if (z > 0 && vertices[1][x + (z * Constants.CHUNK_SIZE1D) - Constants.CHUNK_SIZE1D] != null) {
-                        Position[] sidePosition = vertices[1][x + (z * Constants.CHUNK_SIZE1D) - Constants.CHUNK_SIZE1D][index];
-                        if (sidePosition != null) {
-                            if (sidePosition[2].y > ay && sidePosition[0].y <= y) {
-                                sidePosition[0].y = ay;
-                                sidePosition[1].y = ay;
-                            } else if (sidePosition[2].y <= ay) {
-                                vertices[1][x + (z * Constants.CHUNK_SIZE1D) - Constants.CHUNK_SIZE1D][index] = null;
+                if (z > 0) {
+                    for (int index = 0; index < materials; index++) {
+                        offset = Constants.CHUNK_SIZE1D * staticOffset - (index * 4);
+                        if (vertices[currentLocation - offset].id != 0) {
+                            if (vertices[2 + currentLocation - offset].y > ay && vertices[currentLocation - offset].y <= y) {
+                                vertices[currentLocation - offset].y = ay;
+                                vertices[1 + currentLocation - offset].y = ay;
+                            } else if (vertices[2 + currentLocation - offset].y <= ay) {
+                                for (int s = 0; s < 4; s++) {
+                                    vertices[s + currentLocation - offset].id = 0;
+                                }
                             }
                         }
                     }
                 }
+
+                vertices[currentLocation + (lastID * 4)] = pos;
+                vertices[currentLocation + 1 + (lastID * 4)] = pos1;
+                vertices[currentLocation + 2 + (lastID * 4)] = pos2;
+                vertices[currentLocation + 3 + (lastID * 4)] = pos3;
 
                 //Right
-                index = 0;
-                while (vertices[2][x + (z * Constants.CHUNK_SIZE1D)][index] != null) {
-                    index++;
-                }
-
-                vertices[2][x + (z * Constants.CHUNK_SIZE1D)][index] = new Position[4];
-                positions = vertices[2][x + (z * Constants.CHUNK_SIZE1D)][index];
+                currentLocation = (2 * materials + location) * 4;
 
                 //1
-                positions[0].x = ax;
-                positions[0].y = y;
-                positions[0].z = z;
-                positions[0].id = objectID;
+                pos.x = ax;
+                pos.y = y;
+                pos.z = z;
+                pos.id = objectID;
 
                 //2
-                positions[1].x = ax;
-                positions[1].y = y;
-                positions[1].z = az;
-                positions[1].id = objectID;
+                pos1.x = ax;
+                pos1.y = y;
+                pos1.z = az;
+                pos1.id = objectID;
 
                 //3
-                positions[2].x = ax;
-                positions[2].y = ay;
-                positions[2].z = az;
-                positions[2].id = objectID;
+                pos2.x = ax;
+                pos2.y = ay;
+                pos2.z = az;
+                pos2.id = objectID;
 
                 //4
-                positions[3].x = ax;
-                positions[3].y = ay;
-                positions[3].z = z;
-                positions[3].id = objectID;
+                pos3.x = ax;
+                pos3.y = ay;
+                pos3.z = z;
+                pos3.id = objectID;
 
-                for (index = 0; index < chunk.Materials - 1; index++) {
-                    if (x > 0 && vertices[2][x + (z * Constants.CHUNK_SIZE1D) - 1] != null) {
-                        Position[] sidePosition = vertices[2][x + (z * Constants.CHUNK_SIZE1D) - 1][index];
-                        if (sidePosition != null) {
-                            if (sidePosition[2].y > ay && sidePosition[0].y <= y) {
-                                sidePosition[0].y = ay;
-                                sidePosition[1].y = ay;
-                            } else if (sidePosition[2].y <= ay) {
-                                vertices[2][x + (z * Constants.CHUNK_SIZE1D) - 1][index] = null;
+                if (x > 0) {
+                    for (int index = 0; index < materials; index++) {
+                        offset = staticOffset - (index * 4);
+                        if (vertices[currentLocation - offset].id != 0) {
+                            if (vertices[currentLocation - offset + 2].y > ay && vertices[currentLocation - offset].y <= y) {
+                                vertices[currentLocation - offset].y = ay;
+                                vertices[currentLocation - offset + 1].y = ay;
+                            } else if (vertices[currentLocation - offset + 2].y <= ay) {
+                                for (int s = 0; s < 4; s++) {
+                                    vertices[s + currentLocation - offset].id = 0;
+                                }
                             }
                         }
                     }
                 }
+
+                vertices[currentLocation + (lastID * 4)] = pos;
+                vertices[currentLocation + 1 + (lastID * 4)] = pos1;
+                vertices[currentLocation + 2 + (lastID * 4)] = pos2;
+                vertices[currentLocation + 3 + (lastID * 4)] = pos3;
 
                 //Left
-                index = 0;
-                while (vertices[3][x + (z * Constants.CHUNK_SIZE1D)][index] != null) {
-                    index++;
-                }
-
-                vertices[3][x + (z * Constants.CHUNK_SIZE1D)][index] = new Position[4];
-                positions = vertices[3][x + (z * Constants.CHUNK_SIZE1D)][index];
+                currentLocation = (3 * materials + location) * 4;
 
                 //1
-                positions[0].x = x;
-                positions[0].y = y;
-                positions[0].z = az;
-                positions[0].id = objectID;
+                pos.x = x;
+                pos.y = y;
+                pos.z = az;
+                pos.id = objectID;
 
                 //2
-                positions[1].x = x;
-                positions[1].y = y;
-                positions[1].z = z;
-                positions[1].id = objectID;
+                pos1.x = x;
+                pos1.y = y;
+                pos1.z = z;
+                pos1.id = objectID;
 
                 //3
-                positions[2].x = x;
-                positions[2].y = ay;
-                positions[2].z = z;
-                positions[2].id = objectID;
+                pos2.x = x;
+                pos2.y = ay;
+                pos2.z = z;
+                pos2.id = objectID;
 
                 //4
-                positions[3].x = x;
-                positions[3].y = ay;
-                positions[3].z = az;
-                positions[3].id = objectID;
+                pos3.x = x;
+                pos3.y = ay;
+                pos3.z = az;
+                pos3.id = objectID;
 
-                for (index = 0; index < chunk.Materials - 1; index++) {
-                    if (x > 0 && vertices[3][x + (z * Constants.CHUNK_SIZE1D) - 1] != null) {
-                        Position[] sidePosition = vertices[3][x + (z * Constants.CHUNK_SIZE1D) - 1][index];
-                        if (sidePosition != null) {
-                            if (sidePosition[2].y >= ay) {
-                                for (int s = 0; s < 4; s++) {
-                                    positions[s].id = 0;
-                                }
-                            } else if (sidePosition[2].y < ay && sidePosition[0].y >= y) {
-                                positions[0].y = sidePosition[2].y;
-                                positions[1].y = sidePosition[2].y;
+                if (x > 0) {
+                    for (int index = 0; index < materials; index++) {
+                        offset = staticOffset - (index * 4);
+                        if (vertices[currentLocation - offset].id != 0) {
+                            if (vertices[currentLocation - offset + 2].y >= ay) {
+                                pos.id = -1;
+                            } else if (vertices[currentLocation - offset + 2].y < ay && vertices[currentLocation - offset].y >= y) {
+                                pos.y = vertices[currentLocation - offset + 2].y;
+                                pos1.y = vertices[currentLocation - offset + 2].y;
                             }
                         }
                     }
                 }
 
+                vertices[currentLocation + (lastID * 4)] = pos;
+                vertices[currentLocation + 1 + (lastID * 4)] = pos1;
+                vertices[currentLocation + 2 + (lastID * 4)] = pos2;
+                vertices[currentLocation + 3 + (lastID * 4)] = pos3;
+
                 //Top
-                index = 0;
-                while (vertices[4][x + (z * Constants.CHUNK_SIZE1D)][index] != null) {
-                    index++;
-                }
+                int sx = x;
+                offset = staticOffset;
 
-                vertices[4][x + (z * Constants.CHUNK_SIZE1D)][index] = new Position[4];
-                positions = vertices[4][x + (z * Constants.CHUNK_SIZE1D)][index];
+                currentLocation = (lastID + 4 * materials + location) * 4;
 
-                if (y > 0 && vertices[4][x + (z * Constants.CHUNK_SIZE1D)] != null && index > 0) {
-                    Position[] sidePosition = vertices[4][x + (z * Constants.CHUNK_SIZE1D)][index - 1];
-                    if (sidePosition != null) {
-                        vertices[4][x + (z * Constants.CHUNK_SIZE1D)][index - 1] = null;
+                if (y > 0 && lastID > 0) {
+                    if (vertices[((lastID - 1) + 4 * materials + location) * 4].id != 0) {
+                        for (int s = 0; s < 4; s++) {
+                            vertices[s + (((lastID - 1) + 4 * materials + location) * 4)].id = 0;
+                        }
                     }
                 }
 
                 //Naive Greedy Meshing
-                int sx = x;
-                if (x > 0 && vertices[4][x + (z * Constants.CHUNK_SIZE1D) - 1] != null) {
-                    Position[] sidePosition = vertices[4][x + (z * Constants.CHUNK_SIZE1D) - 1][index];
-                    if (sidePosition != null && sidePosition[0].y == ay) {
-                        sx = sidePosition[0].x;
-                        vertices[4][x + (z * Constants.CHUNK_SIZE1D) - 1] = null;
+                if (x > 0) {
+                    if (vertices[currentLocation - offset].id != 0 && vertices[currentLocation - offset].y == ay) {
+                        sx = vertices[currentLocation - offset].x;
+                        for (int s = 0; s < 4; s++) {
+                            vertices[s + currentLocation - offset].id = 0;
+                        }
                     }
                 }
 
                 //1
-                positions[0].x = sx;
-                positions[0].y = ay;
-                positions[0].z = z;
-                positions[0].id = objectID;
+                pos.x = sx;
+                pos.y = ay;
+                pos.z = z;
+                pos.id = objectID;
 
                 //2
-                positions[1].x = ax;
-                positions[1].y = ay;
-                positions[1].z = z;
-                positions[1].id = objectID;
+                pos1.x = ax;
+                pos1.y = ay;
+                pos1.z = z;
+                pos1.id = objectID;
 
                 //3
-                positions[2].x = ax;
-                positions[2].y = ay;
-                positions[2].z = az;
-                positions[2].id = objectID;
+                pos2.x = ax;
+                pos2.y = ay;
+                pos2.z = az;
+                pos2.id = objectID;
 
                 //4
-                positions[3].x = sx;
-                positions[3].y = ay;
-                positions[3].z = az;
-                positions[3].id = objectID;
+                pos3.x = sx;
+                pos3.y = ay;
+                pos3.z = az;
+                pos3.id = objectID;
+
+                vertices[currentLocation] = pos;
+                vertices[currentLocation + 1] = pos1;
+                vertices[currentLocation + 2] = pos2;
+                vertices[currentLocation + 3] = pos3;
 
                 //Bottom
-                index = 0;
-                while (vertices[5][x + (z * Constants.CHUNK_SIZE1D)][index] != null) {
-                    index++;
-                }
+                offset = staticOffset;
 
-                vertices[5][x + (z * Constants.CHUNK_SIZE1D)][index] = new Position[4];
-                positions = vertices[5][x + (z * Constants.CHUNK_SIZE1D)][index];
+                currentLocation = (5 * materials + location) * 4;
 
-                if (y > 0 && vertices[5][x + (z * Constants.CHUNK_SIZE1D)] != null && index > 0) {
-                    Position[] sidePosition = vertices[5][x + (z * Constants.CHUNK_SIZE1D)][index - 1];
-                    if (sidePosition != null) {
-                        vertices[5][x + (z * Constants.CHUNK_SIZE1D)][index] = vertices[5][x + (z * Constants.CHUNK_SIZE1D)][index - 1];
+                if (y > 0 && lastID > 0) {
+                    if (vertices[((lastID - 1) + 5 * materials + location) * 4].id != 0) {
                         count += lenght;
+                        lastID = objectID;
+                        if (lastID == materials) {
+                            lastID = 0;
+                        }
                         continue;
                     }
                 }
 
                 //Naive Greedy Meshing
                 sx = x;
-                for (index = 0; index < chunk.Materials - 1; index++) {
-                    if (x > 0 && vertices[5][x + (z * Constants.CHUNK_SIZE1D) - 1] != null) {
-                        Position[] sidePosition = vertices[5][x + (z * Constants.CHUNK_SIZE1D) - 1][index];
-                        if (sidePosition != null && sidePosition[0].y == y) {
-                            sx = sidePosition[1].x;
-                            vertices[5][x + (z * Constants.CHUNK_SIZE1D) - 1] = null;
+                if (x > 0) {
+                    for (int index = 0; index < materials; index++) {
+                        offset = staticOffset - (index * 4);
+                        if (vertices[currentLocation - offset].id != 0 && vertices[currentLocation - offset].y == y) {
+                            sx = vertices[1 + currentLocation - offset].x;
+                            for (int s = 0; s < 4; s++) {
+                                vertices[s + currentLocation - offset].id = 0;
+                            }
                         }
                     }
                 }
 
                 //1
-                positions[0].x = ax;
-                positions[0].y = y;
-                positions[0].z = z;
-                positions[0].id = objectID;
+                pos.x = ax;
+                pos.y = y;
+                pos.z = z;
+                pos.id = objectID;
 
                 //2
-                positions[1].x = sx;
-                positions[1].y = y;
-                positions[1].z = z;
-                positions[1].id = objectID;
+                pos1.x = sx;
+                pos1.y = y;
+                pos1.z = z;
+                pos1.id = objectID;
 
                 //3
-                positions[2].x = sx;
-                positions[2].y = y;
-                positions[2].z = az;
-                positions[2].id = objectID;
+                pos2.x = sx;
+                pos2.y = y;
+                pos2.z = az;
+                pos2.id = objectID;
 
                 //4
-                positions[3].x = ax;
-                positions[3].y = y;
-                positions[3].z = az;
-                positions[3].id = objectID;
+                pos3.x = ax;
+                pos3.y = y;
+                pos3.z = az;
+                pos3.id = objectID;
+
+                vertices[currentLocation + (lastID * 4)] = pos;
+                vertices[currentLocation + 1 + (lastID * 4)] = pos1;
+                vertices[currentLocation + 2 + (lastID * 4)] = pos2;
+                vertices[currentLocation + 3 + (lastID * 4)] = pos3;
+            }
+
+            lastID = objectID;
+
+            if (lastID == materials) {
+                lastID = 0;
             }
 
             count += lenght;
@@ -354,128 +373,181 @@ public class Mesher {
         return vertices;
     }
 
-    public static Stack<Position[]>[] GreedyMeshing (Position[][][][] primitives, int side, Stack<Position[]>[] stack) {
+    public static Queue<Position>[] GreedyMeshing (Position[] vertices, int side, Queue<Position>[] stack) {
+
+        int count = stack.Count ();
+        int staticOffset = 4 * count * 6;
+        int offset = Constants.CHUNK_SIZE1D * staticOffset;
+
         for (int z = 0; z < Constants.CHUNK_SIZE1D; z++) {
             for (int x = 0; x < Constants.CHUNK_SIZE1D; x++) {
-                for (int y = 0; y < stack.Count (); y++) {
-                    if (primitives[side][x + (z * Constants.CHUNK_SIZE1D)] != null) {
-                        Position[] positions = primitives[side][x + (z * Constants.CHUNK_SIZE1D)][y];
-                        if (positions != null) {
-                            switch (side) {
-                                case 0:
-                                    if (positions[0].id == 0) {
-                                        primitives[side][x + (z * Constants.CHUNK_SIZE1D)][y] = null;
-                                        continue;
-                                    } else if (x < Constants.CHUNK_SIZE1D - 1 && primitives[side][x + (z * Constants.CHUNK_SIZE1D) + 1] != null) {
-                                        Position[] sidePosition = primitives[side][x + (z * Constants.CHUNK_SIZE1D) + 1][y];
-                                        if (sidePosition != null) {
-                                            if (sidePosition[0].id == 0) {
-                                                primitives[side][x + (z * Constants.CHUNK_SIZE1D) + 1][y] = null;
-                                            } else if (sidePosition[0].y == positions[0].y &&
-                                                positions[2].y == sidePosition[2].y) {
+                for (int y = 0; y < count; y++) {
+                    int location = (y + ((side + ((x + (z * Constants.CHUNK_SIZE1D)) * 6)) * count)) * 4;
 
-                                                positions[1].x = sidePosition[1].x;
-                                                positions[2].x = sidePosition[2].x;
-                                                primitives[side][x + (z * Constants.CHUNK_SIZE1D) + 1][y] = positions;
-                                                primitives[side][x + (z * Constants.CHUNK_SIZE1D)][y] = null;
-                                                continue;
-                                            }
-                                        }
+                    Position pos = vertices[location];
+                    Position pos1 = vertices[location + 1];
+                    Position pos2 = vertices[location + 2];
+                    Position pos3 = vertices[location + 3];
+
+                    if (pos.id > 0) {
+                        switch (side) {
+                            case 0:
+                                if (x < Constants.CHUNK_SIZE1D - 1 &&
+                                    vertices[location + staticOffset].id > 0 &&
+                                    vertices[location + staticOffset].y == pos.y &&
+                                    pos2.y == vertices[location + staticOffset + 2].y) {
+
+                                    pos1.x = vertices[location + staticOffset + 1].x;
+                                    pos2.x = vertices[location + staticOffset + 2].x;
+
+                                    vertices[location + staticOffset] = pos;
+                                    vertices[location + staticOffset + 1] = pos1;
+                                    vertices[location + staticOffset + 2] = pos2;
+                                    vertices[location + staticOffset + 3] = pos3;
+
+                                    for (int i = 0; i < 4; i++) {
+                                        vertices[location + i].id = 0;
                                     }
-                                    stack[positions[0].id - 1].Push (positions);
-                                    break;
-                                case 1:
-                                    if (x < Constants.CHUNK_SIZE1D - 1) {
-                                        if (primitives[side][x + (z * Constants.CHUNK_SIZE1D) + 1] != null) {
-                                            Position[] sidePosition = primitives[side][x + (z * Constants.CHUNK_SIZE1D) + 1][y];
-                                            if (sidePosition != null &&
-                                                sidePosition[2].y == positions[2].y &&
-                                                positions[0].y == sidePosition[0].y) {
+                                    continue;
+                                }
+                                for (int i = 0; i < 4; i++) {
+                                    Position insert = vertices[location + i];
+                                    stack[insert.id - 1].Enqueue (insert);
+                                }
+                                break;
+                            case 1:
+                                if (x < Constants.CHUNK_SIZE1D - 1 &&
+                                    vertices[location + staticOffset].id > 0 &&
+                                    vertices[location + staticOffset + 2].y == pos2.y &&
+                                    pos.y == vertices[location + staticOffset].y) {
 
-                                                positions[0].x = sidePosition[0].x;
-                                                positions[3].x = sidePosition[3].x;
-                                                primitives[side][x + (z * Constants.CHUNK_SIZE1D) + 1][y] = positions;
-                                                primitives[side][x + (z * Constants.CHUNK_SIZE1D)][y] = null;
-                                                continue;
-                                            }
-                                        }
+                                    pos.x = vertices[location + staticOffset].x;
+                                    pos3.x = vertices[location + staticOffset + 3].x;
+
+                                    vertices[location + staticOffset] = pos;
+                                    vertices[location + staticOffset + 1] = pos1;
+                                    vertices[location + staticOffset + 2] = pos2;
+                                    vertices[location + staticOffset + 3] = pos3;
+
+                                    for (int i = 0; i < 4; i++) {
+                                        vertices[location + i].id = 0;
                                     }
-                                    stack[positions[0].id - 1].Push (positions);
-                                    break;
-                                case 2:
-                                    if (z < Constants.CHUNK_SIZE1D - 1 && primitives[side][x + (z * Constants.CHUNK_SIZE1D) + Constants.CHUNK_SIZE1D] != null) {
-                                        Position[] sidePosition = primitives[side][x + (z * Constants.CHUNK_SIZE1D) + Constants.CHUNK_SIZE1D][y];
-                                        if (sidePosition != null &&
-                                            positions[2].y == sidePosition[2].y &&
-                                            positions[0].y == sidePosition[0].y) {
+                                    continue;
+                                }
 
-                                            positions[1].z = sidePosition[1].z;
-                                            positions[2].z = sidePosition[2].z;
-                                            primitives[side][x + (z * Constants.CHUNK_SIZE1D) + Constants.CHUNK_SIZE1D][y] = positions;
-                                            primitives[side][x + (z * Constants.CHUNK_SIZE1D)][y] = null;
-                                            continue;
-                                        }
+                                for (int i = 0; i < 4; i++) {
+                                    Position insert = vertices[location + i];
+                                    stack[insert.id - 1].Enqueue (insert);
+                                }
+
+                                break;
+                            case 2:
+                                if (z < Constants.CHUNK_SIZE1D - 1 &&
+                                    vertices[location + offset].id > 0 &&
+                                    pos2.y == vertices[location + offset + 2].y &&
+                                    pos.y == vertices[location + offset].y) {
+
+                                    pos1.z = vertices[location + offset + 1].z;
+                                    pos2.z = vertices[location + offset + 2].z;
+
+                                    vertices[location + offset] = pos;
+                                    vertices[location + offset + 1] = pos1;
+                                    vertices[location + offset + 2] = pos2;
+                                    vertices[location + offset + 3] = pos3;
+
+                                    for (int i = 0; i < 4; i++) {
+                                        vertices[location + i].id = 0;
                                     }
-                                    stack[positions[0].id - 1].Push (positions);
-                                    break;
-                                case 3:
-                                    if (positions[0].id == 0) {
-                                        primitives[side][x + (z * Constants.CHUNK_SIZE1D)][y] = null;
-                                        continue;
-                                    } else if (z < Constants.CHUNK_SIZE1D - 1 && primitives[side][x + (z * Constants.CHUNK_SIZE1D) + Constants.CHUNK_SIZE1D] != null) {
-                                        Position[] sidePosition = primitives[side][x + (z * Constants.CHUNK_SIZE1D) + Constants.CHUNK_SIZE1D][y];
-                                        if (sidePosition != null) {
-                                            if (sidePosition[0].id == 0) {
-                                                primitives[side][x + (z * Constants.CHUNK_SIZE1D) + Constants.CHUNK_SIZE1D][y] = null;
-                                            } else if (sidePosition[0].y == positions[0].y
-                                             && sidePosition[2].y == positions[2].y) {
+                                    continue;
+                                }
 
-                                                positions[0].z = sidePosition[0].z;
-                                                positions[3].z = sidePosition[3].z;
-                                                primitives[side][x + (z * Constants.CHUNK_SIZE1D) + Constants.CHUNK_SIZE1D][y] = positions;
-                                                primitives[side][x + (z * Constants.CHUNK_SIZE1D)][y] = null;
-                                                continue;
-                                            }
-                                        }
+                                for (int i = 0; i < 4; i++) {
+                                    Position insert = vertices[location + i];
+                                    stack[insert.id - 1].Enqueue (insert);
+                                }
+                                break;
+                            case 3:
+                                offset = Constants.CHUNK_SIZE1D * staticOffset;
+                                if (z < Constants.CHUNK_SIZE1D - 1 &&
+                                    vertices[location + offset].id > 0 &&
+                                    vertices[location + offset].y == pos.y &&
+                                    vertices[location + offset + 2].y == pos2.y) {
+
+                                    pos.z = vertices[location + offset].z;
+                                    pos3.z = vertices[location + offset + 3].z;
+
+                                    vertices[location + offset] = pos;
+                                    vertices[location + offset + 1] = pos1;
+                                    vertices[location + offset + 2] = pos2;
+                                    vertices[location + offset + 3] = pos3;
+
+                                    for (int i = 0; i < 4; i++) {
+                                        vertices[location + i].id = 0;
                                     }
-                                    stack[positions[0].id - 1].Push (positions);
-                                    break;
-                                case 4:
-                                    if (z < Constants.CHUNK_SIZE1D - 1 && primitives[side][x + (z * Constants.CHUNK_SIZE1D) + Constants.CHUNK_SIZE1D] != null) {
-                                        Position[] sidePosition = primitives[side][x + (z * Constants.CHUNK_SIZE1D) + Constants.CHUNK_SIZE1D][y];
-                                        if (sidePosition != null &&
-                                            sidePosition[0].x == positions[0].x && sidePosition[1].x == positions[1].x &&
-                                            sidePosition[0].y == positions[0].y) {
+                                    continue;
+                                }
+                                for (int i = 0; i < 4; i++) {
+                                    Position insert = vertices[location + i];
+                                    stack[insert.id - 1].Enqueue (insert);
+                                }
+                                break;
+                            case 4:
+                                if (z < Constants.CHUNK_SIZE1D - 1 &&
+                                    vertices[location + offset].id > 0 &&
+                                    vertices[location + offset].x == pos.x &&
+                                    vertices[location + offset + 1].x == pos1.x &&
+                                    vertices[location + offset].y == pos.y) {
 
-                                            positions[3].z = sidePosition[3].z;
-                                            positions[2].z = sidePosition[2].z;
-                                            primitives[side][x + (z * Constants.CHUNK_SIZE1D) + Constants.CHUNK_SIZE1D][y] = positions;
-                                            primitives[side][x + (z * Constants.CHUNK_SIZE1D)][y] = null;
-                                            continue;
-                                        }
+                                    pos3.z = vertices[location + offset + 3].z;
+                                    pos2.z = vertices[location + offset + 2].z;
+
+                                    vertices[location + offset] = pos;
+                                    vertices[location + offset + 1] = pos1;
+                                    vertices[location + offset + 2] = pos2;
+                                    vertices[location + offset + 3] = pos3;
+
+                                    for (int i = 0; i < 4; i++) {
+                                        vertices[location + i].id = 0;
                                     }
-                                    stack[positions[0].id - 1].Push (positions);
-                                    break;
+                                    continue;
+                                }
 
-                                case 5:
-                                    if (z < Constants.CHUNK_SIZE1D - 1 && primitives[side][x + (z * Constants.CHUNK_SIZE1D) + Constants.CHUNK_SIZE1D] != null) {
-                                        Position[] sidePosition = primitives[side][x + (z * Constants.CHUNK_SIZE1D) + Constants.CHUNK_SIZE1D][y];
-                                        if (sidePosition != null &&
-                                            sidePosition[0].x == positions[0].x &&
-                                            sidePosition[2].x == positions[2].x &&
-                                            sidePosition[0].y == positions[0].y) {
+                                for (int i = 0; i < 4; i++) {
+                                    Position insert = vertices[location + i];
+                                    stack[insert.id - 1].Enqueue (insert);
+                                }
+                                break;
 
-                                            positions[3].z = sidePosition[3].z;
-                                            positions[2].z = sidePosition[2].z;
-                                            primitives[side][x + (z * Constants.CHUNK_SIZE1D) + Constants.CHUNK_SIZE1D][y] = positions;
-                                            primitives[side][x + (z * Constants.CHUNK_SIZE1D)][y] = null;
-                                            continue;
-                                        }
+                            case 5:
+                                if (z < Constants.CHUNK_SIZE1D - 1 &&
+                                    vertices[location + offset].id > 0 &&
+                                    vertices[location + offset].x == pos.x &&
+                                    vertices[location + offset + 2].x == pos2.x &&
+                                    vertices[location + offset].y == pos.y) {
+
+                                    pos3.z = vertices[location + offset + 3].z;
+                                    pos2.z = vertices[location + offset + 2].z;
+
+                                    vertices[location + offset] = pos;
+                                    vertices[location + offset + 1] = pos1;
+                                    vertices[location + offset + 2] = pos2;
+                                    vertices[location + offset + 3] = pos3;
+
+                                    for (int i = 0; i < 4; i++) {
+                                        vertices[location + i].id = 0;
                                     }
-                                    stack[positions[0].id - 1].Push (positions);
-                                    break;
-                            }
+                                    continue;
+                                }
+
+                                for (int i = 0; i < 4; i++) {
+                                    Position insert = vertices[location + i];
+                                    stack[insert.id - 1].Enqueue (insert);
+                                }
+                                break;
                         }
+                    }
+                    for (int i = 0; i < 4; i++) {
+                        vertices[location + i].id = 0;
                     }
                 }
             }
