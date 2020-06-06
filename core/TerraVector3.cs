@@ -14,6 +14,9 @@ public struct TerraVector3 {
         this.y = (int) y;
         this.z = (int) z;
     }
+    public static TerraVector3 operator + (TerraVector3 a, TerraVector3 b) {
+        return new TerraVector3 (a.x + b.y, a.y + b.y, a.z + b.z);
+    }
 
     public static TerraVector3 operator - (TerraVector3 a, TerraVector3 b) {
         return new TerraVector3 (a.x - b.y, a.y - b.y, a.z - b.z);
@@ -25,6 +28,14 @@ public struct TerraVector3 {
 
     public static TerraVector3 operator * (TerraVector3 a, TerraVector3 b) {
         return new TerraVector3 (a.x * b.y, a.y * b.y, a.z * b.z);
+    }
+
+    public static bool operator == (TerraVector3 a, TerraVector3 b) {
+        return a.x == b.x && b.y == b.y && a.z == b.z;
+    }
+
+    public static bool operator != (TerraVector3 a, TerraVector3 b) {
+        return a.x != b.x && b.y != b.y && a.z != b.z;
     }
 
     public float Dot (Position b) {

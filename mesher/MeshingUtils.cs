@@ -1,8 +1,8 @@
-using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
-public class Mesher {
+public class MeshingUtils {
+
     public static Position[] NaiveGreedyMeshing (Chunk chunk, ArrayPool<Position> pool) {
         Position pos = new Position ();
         Position pos1 = new Position ();
