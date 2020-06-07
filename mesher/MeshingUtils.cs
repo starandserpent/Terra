@@ -19,14 +19,14 @@ public class MeshingUtils {
         int lenght;
         int lastID = 0;
 
-        for (int i = 1; count < Constants.CHUNK_SIZE3D; i++) {
+        for (int i = 0; count < Constants.CHUNK_SIZE3D; i++) {
 
             if (prev > 0) {
                 i--;
                 lenght = prev;
                 prev = 0;
             } else {
-                Run run = chunk.Voxels[chunk.Voxels.Count () - i];
+                Run run = chunk.Voxels[i];
                 objectID = run.value;
                 lenght = run.lenght;
             }
