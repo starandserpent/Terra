@@ -7,6 +7,6 @@ public class Chunk
     public Run[] Voxels { get; set; }
     public bool IsEmpty { get; set; }
     public bool IsSurface { get; set; }
-
+    public bool IsGenerated { get; set; }
     public int[] Borders{get; set;}
 }
