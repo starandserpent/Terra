@@ -27,6 +27,7 @@ public class Terra {
 
     public OctreeNode TraverseOctree (int posX, int posY, int posZ, int layer) {
         if (CheckBoundries(posX, posY, posZ) && layer < octree.layers) {
+            lock(this){
                 int currentLayer = octree.layers;
                 OctreeNode currentNode = octree.mainNode;
                 while (currentLayer > layer) {
@@ -71,6 +72,7 @@ public class Terra {
                 }
 
                 return currentNode;
+        }
         }
         return null;
     }
