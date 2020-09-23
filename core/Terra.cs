@@ -42,24 +42,8 @@ public class Terra {
                         childNode.Initialize ();
 
                     currentNode = childNode;
-
-                    /* string name = "layer: " + currentLayer + " " + nodePosX * 16 * (float) Math.Pow(2, currentLayer) + " " +
-                                   nodePosY * 16 * (float) Math.Pow(2, currentLayer) +
-                                   " " + nodePosZ * 16 * (float) Math.Pow(2, currentLayer);
-                     if (!meshes.ContainsKey(name))
-                     {
-                         MeshInstance instance = DebugMesh();
-                         instance.Scale = new Vector3(32 * (float) Math.Pow(2, currentLayer - 2),
-                             32 * (float) Math.Pow(2, currentLayer - 2),
-                             32 * (float) Math.Pow(2, currentLayer - 2));
-                         instance.Name = name;
-                         instance.Translation = new Vector3(nodePosX * 16 * (float) Math.Pow(2, currentLayer - 1),
-                             nodePosY * 16 * (float) Math.Pow(2, currentLayer - 1),
-                             nodePosZ * 16 * (float) Math.Pow(2, currentLayer - 1));
-                         parent.CallDeferred("add_child", instance);
-                         meshes.Add(name, instance);
-                     }*/
                 }
+
                 if (!currentNode.Initialized)
                     currentNode.Initialize ();
 

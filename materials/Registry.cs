@@ -1,28 +1,26 @@
 using System.Collections.Generic;
 using Godot;
 
-public class Registry
+public class Registry : List<TerraObject>
 {
-    private volatile List<TerraObject> objects;
     private Dictionary<string, TerraObject> nameToObject;
 
     public Registry()
     {
-        objects = new List<TerraObject>();
         nameToObject = new Dictionary<string, TerraObject>();
         RegisterDefaultObjects();
     }
 
     private void RegisterDefaultObjects()
     {
-        TerraObject air = new TerraObject("air", null);
+        TerraObject air = new TerraObject("air", null, false);
         RegisterObject(air);
     }
 
     public void RegisterObject(TerraObject terraObject)
     {
-        objects.Add(terraObject);
-        int worldID = objects.IndexOf(terraObject);
+        this.Add(terraObject);
+        int worldID = this.IndexOf(terraObject);
 
         terraObject.worldID = worldID;
 
@@ -40,11 +38,6 @@ public class Registry
 
     public TerraObject SelectByID(int id)
     {
-        return objects[id];
-    }
-
-    public List<TerraObject> GetAllMaterials()
-    {
-        return objects;
+        return this[id];
     }
 }
