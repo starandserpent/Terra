@@ -1,5 +1,4 @@
 using Godot;
-using System;
 
 public class TerraObject
 {
@@ -8,10 +7,12 @@ public class TerraObject
     public string name { get; }
     public SpatialMaterial material { get; }
     public TerraMesh mesh { get; set; }
+    public bool IsSurface {get;}
 
-    public TerraObject(string name, SpatialMaterial material)
+    public TerraObject(string name, SpatialMaterial material, bool isSurface)
     {
         this.name = name;
         this.material = material;
+        this.IsSurface = isSurface;
     }
 }
