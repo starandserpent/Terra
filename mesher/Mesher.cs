@@ -1,9 +1,9 @@
 using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
-public class MeshingUtils {
+public class Mesher {
 
-    public static Position[] NaiveGreedyMeshing (Chunk chunk, ArrayPool<Position> pool) {
+    public static Position[] NaiveGreedyMeshing (Chunk chunk, Chunk[] neighbors, ArrayPool<Position> pool) {
         Position pos = new Position ();
         Position pos1 = new Position ();
         Position pos2 = new Position ();
@@ -53,13 +53,15 @@ public class MeshingUtils {
             int ax = x + 1;
             int ay = lenght + y;
             int az = z + 1;
+            int ycopy = y;
 
             int location = (x + (z * Constants.CHUNK_SIZE1D)) * materials * 6;
 
             if (ay != y) {
+                int offset;
 
                 //Front
-                int offset;
+                Chunk neighbor = neighbors[0];
 
                 currentLocation = location * 4;
 
@@ -91,7 +93,8 @@ public class MeshingUtils {
                     for (int index = 0; index < materials; index++) {
                         offset = (Constants.CHUNK_SIZE1D * staticOffset) - (index * 4);
                         if (vertices[currentLocation - offset].id != 0) {
-                            if (vertices[2 + currentLocation - offset].y >= ay) {
+                            if (vertices[2 + currentLocation - offset].y >= ay) 
+                            {
                                 pos.id = -1;
                             } else if (vertices[2 + currentLocation - offset].y < ay && vertices[currentLocation - offset].y >= y) {
                                 pos.y = vertices[2 + currentLocation - offset].y;
@@ -100,6 +103,30 @@ public class MeshingUtils {
                         }
                     }
                 }
+                else
+                {
+                    if(!neighbor.IsSolid)
+                    {
+                        for (int l = y + 1; l <= Constants.CHUNK_SIZE1D; l++) 
+                        {
+                            if(neighbor.Borders[1][(l - 1) + x * Constants.CHUNK_SIZE1D])
+                            {   
+                                y = l;
+                            }
+                            else
+                            {
+                                break;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        y = Constants.CHUNK_SIZE1D;
+                    }
+
+                    pos.y = y;
+                    pos1.y = y;
+                }   
 
                 vertices[currentLocation + (lastID * 4)] = pos;
                 vertices[currentLocation + 1 + (lastID * 4)] = pos1;
@@ -107,6 +134,8 @@ public class MeshingUtils {
                 vertices[currentLocation + 3 + (lastID * 4)] = pos3;
 
                 //Back
+               y = ycopy;
+                neighbor = neighbors[1];
                 currentLocation = (materials + location) * 4;
 
                 //1
@@ -133,6 +162,31 @@ public class MeshingUtils {
                 pos3.z = az;
                 pos3.id = objectID;
 
+                if(z == Constants.CHUNK_SIZE1D - 1)
+                    {
+                        if(!neighbor.IsSolid)
+                        {
+                            for (int l = y + 1; l <= Constants.CHUNK_SIZE1D; l++) 
+                            {
+                                if(neighbor.Borders[0][(l - 1) + x * Constants.CHUNK_SIZE1D])
+                                {   
+                                    y = l;    
+                                }
+                                else
+                                {
+                                    break;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            y = Constants.CHUNK_SIZE1D;
+                        }
+
+                        pos.y = y;
+                        pos1.y = y;
+                }   
+
                 if (z > 0) {
                     for (int index = 0; index < materials; index++) {
                         offset = Constants.CHUNK_SIZE1D * staticOffset - (index * 4);
@@ -147,16 +201,18 @@ public class MeshingUtils {
                             }
                         }
                     }
-                }
+                } 
 
                 vertices[currentLocation + (lastID * 4)] = pos;
                 vertices[currentLocation + 1 + (lastID * 4)] = pos1;
                 vertices[currentLocation + 2 + (lastID * 4)] = pos2;
                 vertices[currentLocation + 3 + (lastID * 4)] = pos3;
-
+           
                 //Right
+                y = ycopy;
+                neighbor = neighbors[2];
                 currentLocation = (2 * materials + location) * 4;
-
+                
                 //1
                 pos.x = ax;
                 pos.y = y;
@@ -181,6 +237,30 @@ public class MeshingUtils {
                 pos3.z = z;
                 pos3.id = objectID;
 
+                if(x == Constants.CHUNK_SIZE1D - 1)  {
+                        if(!neighbor.IsSolid)
+                        {
+                            for (int l = y + 1; l <= Constants.CHUNK_SIZE1D; l++) 
+                            {
+                                if(neighbor.Borders[3][(l - 1) + z * Constants.CHUNK_SIZE1D])
+                                {   
+                                    y = l;    
+                                }
+                                else
+                                {
+                                    break;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            y = Constants.CHUNK_SIZE1D;
+                        }
+
+                        pos.y = y;
+                        pos1.y = y;
+                    }   
+
                 if (x > 0) {
                     for (int index = 0; index < materials; index++) {
                         offset = staticOffset - (index * 4);
@@ -196,6 +276,7 @@ public class MeshingUtils {
                         }
                     }
                 }
+                  
 
                 vertices[currentLocation + (lastID * 4)] = pos;
                 vertices[currentLocation + 1 + (lastID * 4)] = pos1;
@@ -203,6 +284,8 @@ public class MeshingUtils {
                 vertices[currentLocation + 3 + (lastID * 4)] = pos3;
 
                 //Left
+                y = ycopy;
+                neighbor = neighbors[3];
                 currentLocation = (3 * materials + location) * 4;
 
                 //1
@@ -241,7 +324,30 @@ public class MeshingUtils {
                             }
                         }
                     }
-                }
+                } else
+                {
+                    if(!neighbor.IsSolid)
+                    {
+                            for (int l = y + 1; l <= Constants.CHUNK_SIZE1D; l++) 
+                            {
+                                if(neighbor.Borders[2][(l - 1) + z * Constants.CHUNK_SIZE1D])
+                                {   
+                                    y = l;    
+                                }
+                                else
+                                {
+                                    break;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            y = Constants.CHUNK_SIZE1D;
+                        }
+
+                        pos.y = y;
+                        pos1.y = y;
+                    }   
 
                 vertices[currentLocation + (lastID * 4)] = pos;
                 vertices[currentLocation + 1 + (lastID * 4)] = pos1;
@@ -251,6 +357,8 @@ public class MeshingUtils {
                 //Top
                 int sx = x;
                 offset = staticOffset;
+                neighbor = neighbors[4];
+                y = ycopy;
 
                 currentLocation = (lastID + 4 * materials + location) * 4;
 
@@ -271,6 +379,28 @@ public class MeshingUtils {
                         }
                     }
                 }
+
+                if(ay == Constants.CHUNK_SIZE1D)
+                {
+                    if(!neighbor.IsSolid)
+                    {
+                        for (int l = sx + 1; l <= Constants.CHUNK_SIZE1D; l++) 
+                        {
+                            if(neighbor.Borders[5][(l - 1) + z * Constants.CHUNK_SIZE1D])
+                            {   
+                                sx = l;    
+                            }
+                            else
+                            {
+                                break;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        sx = Constants.CHUNK_SIZE1D;
+                    }
+                }   
 
                 //1
                 pos.x = sx;
@@ -303,7 +433,8 @@ public class MeshingUtils {
 
                 //Bottom
                 offset = staticOffset;
-
+                y = ycopy;
+                neighbor = neighbors[5];
                 currentLocation = (5 * materials + location) * 4;
 
                 if (y > 0 && lastID > 0) {
@@ -331,6 +462,28 @@ public class MeshingUtils {
                     }
                 }
 
+                if(y == 0)
+                {
+                    if(!neighbor.IsSolid)
+                        {
+                            for (int l = sx + 1; l <= Constants.CHUNK_SIZE1D; l++) 
+                            {
+                                if(neighbor.Borders[4][(l - 1) + z * Constants.CHUNK_SIZE1D])
+                                {   
+                                    sx = l;    
+                                }
+                                else
+                                {
+                                    break;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            sx = Constants.CHUNK_SIZE1D;
+                        }
+                }   
+
                 //1
                 pos.x = ax;
                 pos.y = y;
@@ -354,7 +507,7 @@ public class MeshingUtils {
                 pos3.y = y;
                 pos3.z = az;
                 pos3.id = objectID;
-
+                
                 vertices[currentLocation + (lastID * 4)] = pos;
                 vertices[currentLocation + 1 + (lastID * 4)] = pos1;
                 vertices[currentLocation + 2 + (lastID * 4)] = pos2;
@@ -410,9 +563,12 @@ public class MeshingUtils {
                                     }
                                     continue;
                                 }
-                                for (int i = 0; i < 4; i++) {
-                                    Position insert = vertices[location + i];
-                                    stack[insert.id - 1].Enqueue (insert);
+
+                                if(vertices[location].y < vertices[location + 3].y){
+                                    for (int i = 0; i < 4; i++) {
+                                        Position insert = vertices[location + i];
+                                        stack[insert.id - 1].Enqueue (insert);
+                                    }
                                 }
                                 break;
                             case 1:
@@ -435,11 +591,12 @@ public class MeshingUtils {
                                     continue;
                                 }
 
-                                for (int i = 0; i < 4; i++) {
-                                    Position insert = vertices[location + i];
-                                    stack[insert.id - 1].Enqueue (insert);
+                                if(vertices[location].y < vertices[location + 3].y){
+                                    for (int i = 0; i < 4; i++) {
+                                        Position insert = vertices[location + i];
+                                        stack[insert.id - 1].Enqueue (insert);
+                                    }
                                 }
-
                                 break;
                             case 2:
                                 if (z < Constants.CHUNK_SIZE1D - 1 &&
@@ -460,10 +617,11 @@ public class MeshingUtils {
                                     }
                                     continue;
                                 }
-
-                                for (int i = 0; i < 4; i++) {
-                                    Position insert = vertices[location + i];
-                                    stack[insert.id - 1].Enqueue (insert);
+                                if(vertices[location].y < vertices[location + 3].y){
+                                    for (int i = 0; i < 4; i++) {
+                                        Position insert = vertices[location + i];
+                                        stack[insert.id - 1].Enqueue (insert);
+                                    }
                                 }
                                 break;
                             case 3:
@@ -486,9 +644,11 @@ public class MeshingUtils {
                                     }
                                     continue;
                                 }
-                                for (int i = 0; i < 4; i++) {
-                                    Position insert = vertices[location + i];
-                                    stack[insert.id - 1].Enqueue (insert);
+                                if(vertices[location].y < vertices[location + 3].y){
+                                    for (int i = 0; i < 4; i++) {
+                                        Position insert = vertices[location + i];
+                                        stack[insert.id - 1].Enqueue (insert);
+                                    }
                                 }
                                 break;
                             case 4:
@@ -512,9 +672,11 @@ public class MeshingUtils {
                                     continue;
                                 }
 
-                                for (int i = 0; i < 4; i++) {
-                                    Position insert = vertices[location + i];
-                                    stack[insert.id - 1].Enqueue (insert);
+                                if(vertices[location].x < vertices[location + 1].x){
+                                    for (int i = 0; i < 4; i++) {
+                                        Position insert = vertices[location + i];
+                                        stack[insert.id - 1].Enqueue (insert);
+                                    }
                                 }
                                 break;
 
@@ -538,10 +700,11 @@ public class MeshingUtils {
                                     }
                                     continue;
                                 }
-
-                                for (int i = 0; i < 4; i++) {
-                                    Position insert = vertices[location + i];
-                                    stack[insert.id - 1].Enqueue (insert);
+                                if(vertices[location + 1].x < vertices[location].x){
+                                    for (int i = 0; i < 4; i++) {
+                                        Position insert = vertices[location + i];
+                                        stack[insert.id - 1].Enqueue (insert);
+                                    }
                                 }
                                 break;
                         }
