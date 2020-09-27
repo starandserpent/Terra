@@ -38,6 +38,8 @@ public class Registry : List<TerraObject>
 
     public TerraObject SelectByID(int id)
     {
-        return this[id];
+        lock(this){
+            return this[id];
+        }
     }
 }

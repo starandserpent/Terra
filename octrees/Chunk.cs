@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 public class Chunk
 {
-    public uint x { get; set; }
-    public uint y { get; set; }
-    public uint z { get; set; }
+    public int x { get; set; }
+    public int y { get; set; }
+    public int z { get; set; }
     public int Materials { get; set; }
     public List<Run> Voxels { get; set; }
     public bool IsEmpty { get; set; }

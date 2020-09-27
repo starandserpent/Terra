@@ -11,12 +11,12 @@ public class Terra {
 
     public Position boundries{get; private set;}
 
-    public Terra (Position boundries, Node parent) {
+    public Terra (Position position, Position boundries, Node parent) {
         this.parent = parent;
 
         this.boundries = boundries;
 
-        octree = new Octree (boundries.GetMax());
+        octree = new Octree (position, boundries.GetMax());
 
         meshes = new Dictionary<string, MeshInstance> ();
     }
@@ -26,44 +26,38 @@ public class Terra {
     }
 
     public OctreeNode TraverseOctree (int posX, int posY, int posZ, int layer) {
-        if (CheckBoundries(posX, posY, posZ) && layer < octree.layers) {
-            lock(this){
+        if (layer < octree.layers) {
                 int currentLayer = octree.layers;
                 OctreeNode currentNode = octree.mainNode;
+
+                Position pos = new Position(posX, posY, posZ);
+                int size = octree.size;
+
                 while (currentLayer > layer) {
-                    int nodePosX = (int) (posX / (currentLayer * 2));
-                    int nodePosY = (int) (posY / (currentLayer * 2));
-                    int nodePosZ = (int) (posZ / (currentLayer * 2));
 
-                    currentLayer -= 1;
-                    int nodePos = SelectChildOctant (nodePosX, nodePosY, nodePosZ);
-                    OctreeNode childNode = currentNode.children[nodePos & 1, (nodePos & 2) >> 1, (nodePos & 4) >> 2];
-                    if (!childNode.Initialized)
-                        childNode.Initialize ();
+                    currentNode = currentNode.SelectChild(Convert.ToInt32(posX > currentNode.center.x), Convert.ToInt32(posY > currentNode.center.y), Convert.ToInt32(posZ > currentNode.center.z));
 
-                    currentNode = childNode;
+                    if (!currentNode.Initialized)
+                        currentNode.Initialize ();
+
+                    if(currentNode == null)
+                    {
+                        return null;
+                    }
+
+                    currentLayer -= 1;                                        
                 }
 
                 if (!currentNode.Initialized)
                     currentNode.Initialize ();
 
                 if (currentLayer == 0) {
-
-                    int pos = SelectChildOctant (posX, posY, posZ);
-                    OctreeNode childNode = currentNode.children[pos & 1, (pos & 2) >> 1, (pos & 4) >> 2];
-
-                    return childNode;
+                    currentNode = currentNode.SelectChild(Convert.ToInt32(posX > 0), Convert.ToInt32(posY > 0), Convert.ToInt32(posZ > 0));
                 }
 
                 return currentNode;
         }
-        }
         return null;
-    }
-
-    public bool CheckBoundries(int posX, int posY, int posZ){
-        return posX >= 0 && posY >= 0 && posZ >= 0 &&
-            posX <= boundries.x * 8 && posY <= boundries.y * 8 && posZ <= boundries.z * 8;
     }
 
     public void PlaceChunk (int posX, int posY, int posZ, Chunk chunk) {
@@ -77,10 +71,6 @@ public class Terra {
         OctreeNode node = octree.nodes[0][lolong];
         node.chunk = chunk;
         octree.nodes[0][lolong] = node;*/
-    }
-
-    private int SelectChildOctant (int posX, int posY, int posZ) {
-        return (posX % 2) * 4 | (posY % 2) * 2 | (posZ % 2);
     }
 
     private static MeshInstance DebugMesh () {
