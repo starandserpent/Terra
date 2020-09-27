@@ -2,34 +2,34 @@ using System.Collections.Concurrent;
 using System;
 using System.Numerics;
 public class OctreeNode {
-    const int DIM_LEN = 1;
-    public Vector3 center { get; private set; }
+    public Position center { get; private set; }
     public int size { get; private set; }
     public bool Initialized { get; private set; }
     private ConcurrentDictionary<ValueTuple<int, int, int>, OctreeNode> children;
     public Chunk chunk { get; set; }
-    public static int numNodes = 0;
-    public static int numNodesInit = 0;
     public int layer { get; private set; }
 
-    public OctreeNode (int size, int layer) {
-        this.size = size;
+    public OctreeNode (Position center, int size, int layer) {
         this.center = center;
+        this.size = size;
         this.layer = layer;
         this.Initialized = false;
-        numNodes++;
+        children = new ConcurrentDictionary<(int, int, int), OctreeNode>();
     }
 
     public void Initialize () {
-        children = new ConcurrentDictionary<(int, int, int), OctreeNode>();
-        for (int i = 0; i < DIM_LEN; i ++)
-            for (int j = 0; j < DIM_LEN; j ++)
-                for (int k = 0; k < DIM_LEN; k ++) {
-                    children.TryAdd(new ValueTuple<int, int, int>(-i, -j , -k), new OctreeNode (size / 2, layer - 1));
-                }
+        int size = this.size/2;
+        children.TryAdd(new ValueTuple<int, int, int>(1, 1 , 1), new OctreeNode (new Position(center.x + size, center.y + size, center.z + size), size, layer - 1));
+        children.TryAdd(new ValueTuple<int, int, int>(0, 1 , 1), new OctreeNode (new Position(center.x - size, center.y + size, center.z + size), size, layer - 1));
+        children.TryAdd(new ValueTuple<int, int, int>(1, 0 , 1), new OctreeNode (new Position(center.x + size, center.y - size, center.z + size), size, layer - 1));
+        children.TryAdd(new ValueTuple<int, int, int>(0, 0, 1), new OctreeNode (new Position(center.x - size, center.y - size, center.z + size), size,layer - 1));
+
+        children.TryAdd(new ValueTuple<int, int, int>(1, 1 , 0), new OctreeNode (new Position(center.x + size, center.y + size, center.z - size), size, layer - 1));
+        children.TryAdd(new ValueTuple<int, int, int>(0, 1 , 0), new OctreeNode (new Position(center.x - size, center.y + size, center.z - size), size, layer - 1));
+        children.TryAdd(new ValueTuple<int, int, int>(1, 0, 0), new OctreeNode (new Position(center.x + size, center.y - size, center.z - size), size, layer - 1));
+        children.TryAdd(new ValueTuple<int, int, int>(0, 0, 0), new OctreeNode (new Position(center.x - size, center.y - size, center.z - size), size, layer - 1));
 
         Initialized = true;
-        numNodesInit++;
     }
 
     public OctreeNode SelectChild (int x, int y, int z) {

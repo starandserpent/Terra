@@ -11,12 +11,12 @@ public class Terra {
 
     public Position boundries{get; private set;}
 
-    public Terra (Position boundries, Node parent) {
+    public Terra (Position position, Position boundries, Node parent) {
         this.parent = parent;
 
         this.boundries = boundries;
 
-        octree = new Octree (boundries.GetMax());
+        octree = new Octree (position, boundries.GetMax());
 
         meshes = new Dictionary<string, MeshInstance> ();
     }
@@ -30,25 +30,22 @@ public class Terra {
                 int currentLayer = octree.layers;
                 OctreeNode currentNode = octree.mainNode;
 
+                Position pos = new Position(posX, posY, posZ);
+                int size = octree.size;
+
                 while (currentLayer > layer) {
 
-                    int nodePosX = (int) (posX / (currentLayer * 2));
-                    int nodePosY = (int) (posY / (currentLayer * 2));
-                    int nodePosZ = (int) (posZ / (currentLayer * 2));
+                    currentNode = currentNode.SelectChild(Convert.ToInt32(posX > currentNode.center.x), Convert.ToInt32(posY > currentNode.center.y), Convert.ToInt32(posZ > currentNode.center.z));
 
-                    currentLayer -= 1;
+                    if (!currentNode.Initialized)
+                        currentNode.Initialize ();
 
-                    OctreeNode childNode = null;
-                    
-                    while(childNode == null)
+                    if(currentNode == null)
                     {
-                        childNode = currentNode.SelectChild(Convert.ToInt32(nodePosX > 0), Convert.ToInt32(nodePosY > 0), Convert.ToInt32(nodePosZ > 0));
+                        return null;
                     }
 
-                    if (!childNode.Initialized)
-                        childNode.Initialize ();
-
-                    currentNode = childNode;
+                    currentLayer -= 1;                                        
                 }
 
                 if (!currentNode.Initialized)
